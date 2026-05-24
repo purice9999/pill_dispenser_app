@@ -5,7 +5,7 @@ import '../models/history_entry.dart';
 
 /// Provider pentru gestionarea istoricului pastilelor
 class HistoryProvider extends ChangeNotifier {
-  late Database _database;
+  Database? _database;
   List<HistoryEntry> _history = [];
   bool _isInitialized = false;
 
@@ -34,7 +34,7 @@ class HistoryProvider extends ChangeNotifier {
         onCreate: (db, version) async {
           await db.execute(
             '''
-            CREATE TABLE history (
+            CREATE TABLE IF NOT EXISTS history (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               message TEXT NOT NULL,
               timestamp TEXT NOT NULL,
@@ -50,13 +50,17 @@ class HistoryProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('Eroare inițializare bază de date: $e');
+      _isInitialized = true; // Mark as initialized even on error
+      notifyListeners();
     }
   }
 
   /// Încarcă istoricul din baza de date
   Future<void> _loadHistory() async {
     try {
-      final List<Map<String, dynamic>> maps = await _database.query(
+      if (_database == null) return;
+
+      final List<Map<String, dynamic>> maps = await _database!.query(
         'history',
         orderBy: 'created_at DESC',
       );
@@ -75,12 +79,14 @@ class HistoryProvider extends ChangeNotifier {
   /// Adaugă o intrare în istoric
   Future<void> addEntry(String message) async {
     try {
+      if (_database == null) return;
+
       final entry = HistoryEntry(
         message: message,
         timestamp: DateTime.now(),
       );
 
-      await _database.insert(
+      await _database!.insert(
         'history',
         entry.toMap(),
         conflictAlgorithm: ConflictAlgorithm.replace,
@@ -96,7 +102,9 @@ class HistoryProvider extends ChangeNotifier {
   /// Șterge întregul istoric
   Future<void> clearHistory() async {
     try {
-      await _database.delete('history');
+      if (_database == null) return;
+
+      await _database!.delete('history');
       _history.clear();
       notifyListeners();
     } catch (e) {
@@ -107,7 +115,9 @@ class HistoryProvider extends ChangeNotifier {
   /// Șterge o intrare specifică
   Future<void> deleteEntry(int id) async {
     try {
-      await _database.delete(
+      if (_database == null) return;
+
+      await _database!.delete(
         'history',
         where: 'id = ?',
         whereArgs: [id],
@@ -122,7 +132,7 @@ class HistoryProvider extends ChangeNotifier {
 
   @override
   void dispose() {
-    _database.close();
+    _database?.close();
     super.dispose();
   }
 }
