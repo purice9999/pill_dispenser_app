@@ -5,7 +5,7 @@ workflows:
     max_build_duration: 120
     environment:
       flutter: stable
-      java: 11
+      java: 17
     triggering:
       events:
         - push
