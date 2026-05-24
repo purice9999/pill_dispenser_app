@@ -5,12 +5,17 @@ plugins {
 
 android {
     namespace = "com.example.pill_dispenser"
-    compileSdk = 34
+    compileSdk = 36
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
 
     defaultConfig {
         applicationId = "com.example.pill_dispenser"
         minSdk = 21
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
     }
