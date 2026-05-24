@@ -1,0 +1,39 @@
+CODEMAGIC BUILD INSTRUCTIONS - FORCE CLEAN BUILD
+
+IMPORTANT: Codemagic is caching old files. Follow these steps:
+
+STEP 1: In Codemagic Dashboard
+================================
+1. Go to https://codemagic.io
+2. Select pill_dispenser_app project
+3. Click on "Settings" (gear icon)
+4. Find "Clear build cache" or similar option
+5. Click to clear cache
+6. Go back to project
+
+STEP 2: Push New Changes
+================================
+git add .
+git commit -m "Force clean build: Clear cache and simplify gradle config"
+git push origin main
+
+STEP 3: Start New Build
+================================
+1. Click "Start build"
+2. Select Android
+3. Click "Start build"
+4. IMPORTANT: Wait for build to complete (don't cancel)
+
+STEP 4: Monitor Build
+================================
+Watch the build log. You should see:
+✓ Cloning repository
+✓ Installing Flutter
+✓ Running flutter pub get
+✓ Compiling Dart
+✓ Running Gradle build
+✓ Generating APK
+
+Expected time: 3-5 minutes
+
+If it still fails, the error will be clear in the logs.

@@ -1,0 +1,11 @@
+BUILD FIX - May 24, 2026
+
+This file forces Codemagic to clear cache and rebuild from scratch.
+
+Changes made:
+1. Simplified build.gradle.kts to minimal configuration
+2. Removed all deprecated Kotlin/Java options
+3. Cleared local .dart_tool and build directories
+4. Updated .gitignore
+
+Force rebuild by changing this timestamp: 2026-05-24T15:30:00Z

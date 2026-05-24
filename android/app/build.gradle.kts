@@ -1,36 +1,23 @@
 plugins {
     id("com.android.application")
     id("dev.flutter.flutter-gradle-plugin")
-    id("kotlin-android")
 }
 
 android {
     namespace = "com.example.pill_dispenser"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    kotlin {
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-        }
-    }
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.example.pill_dispenser"
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        minSdk = 21
+        targetSdk = 34
+        versionCode = 1
+        versionName = "1.0"
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("debug")
+            isMinifyEnabled = false
         }
     }
 }
