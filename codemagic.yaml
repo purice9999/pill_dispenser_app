@@ -5,16 +5,10 @@ workflows:
     max_build_duration: 120
     environment:
       flutter: stable
-      xcode: latest
       java: 11
     triggering:
       events:
         - push
-        - pull_request
-      branch:
-        include_patterns:
-          - main
-          - develop
     scripts:
       - name: Get Flutter packages
         script: flutter pub get
@@ -25,10 +19,3 @@ workflows:
     artifacts:
       - build/app/outputs/apk/debug/app-debug.apk
       - build/app/outputs/bundle/debug/app-debug.aab
-    publishing:
-      email:
-        recipients:
-          - user@example.com
-        notify:
-          success: true
-          failure: true
