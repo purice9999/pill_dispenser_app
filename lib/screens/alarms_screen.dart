@@ -132,68 +132,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> {
                   const SizedBox(height: 20),
 
                   // Alarmă pentru fiecare zi
-                  ...AlarmProvider.days.map((day) {
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              day,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blue,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            ...AlarmProvider.moments.map((moment) {
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: Row(
-                                  children: [
-                                    Checkbox(
-                                      value: _selectedAlarms[day]![moment],
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _selectedAlarms[day]![moment] = value ?? false;
-                                        });
-                                      },
-                                    ),
-                                    Expanded(
-                                      child: Text(moment),
-                                    ),
-                                    GestureDetector(
-                                      onTap: () => _selectTime(context, day, moment),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 8,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          border: Border.all(color: Colors.blue),
-                                          borderRadius: BorderRadius.circular(4),
-                                        ),
-                                        child: Text(
-                                          _formatTime(_selectedTimes[day]![moment]!),
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.blue,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }).toList(),
-                          ],
-                        ),
-                      );
-                    }).toList(),
+                  ..._buildDayCards(),
 
                   const SizedBox(height: 20),
 
@@ -217,5 +156,75 @@ class _AlarmsScreenState extends State<AlarmsScreen> {
         },
       ),
     );
+  }
+
+  List<Widget> _buildDayCards() {
+    return AlarmProvider.days.map((day) {
+      return Card(
+        margin: const EdgeInsets.only(bottom: 16),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                day,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue,
+                ),
+              ),
+              const SizedBox(height: 12),
+              ..._buildMomentRows(day),
+            ],
+          ),
+        ),
+      );
+    }).toList();
+  }
+
+  List<Widget> _buildMomentRows(String day) {
+    return AlarmProvider.moments.map((moment) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Row(
+          children: [
+            Checkbox(
+              value: _selectedAlarms[day]![moment],
+              onChanged: (value) {
+                setState(() {
+                  _selectedAlarms[day]![moment] = value ?? false;
+                });
+              },
+            ),
+            Expanded(
+              child: Text(moment),
+            ),
+            GestureDetector(
+              onTap: () => _selectTime(context, day, moment),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.blue),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  _formatTime(_selectedTimes[day]![moment]!),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }).toList();
   }
 }

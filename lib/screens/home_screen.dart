@@ -20,6 +20,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<Widget> _screens = [
     const SetAlarmScreen(),
+    const AlarmsScreen(),
+    const ManageAlarmsScreen(),
     const HistoryScreen(),
   ];
 
@@ -42,7 +44,15 @@ class _HomeScreenState extends State<HomeScreen> {
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.alarm),
-            label: 'Setare Alarmă',
+            label: 'Setare',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.alarm_add),
+            label: 'Alarmă Multiplă',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.edit),
+            label: 'Gestionare',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.history),
