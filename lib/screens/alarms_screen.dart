@@ -193,8 +193,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> {
                           ],
                         ),
                       );
-                    );
-                  }).toList(),
+                    }).toList(),
 
                   const SizedBox(height: 20),
 

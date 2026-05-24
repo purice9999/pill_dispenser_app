@@ -15,7 +15,7 @@ class AlarmProvider extends ChangeNotifier {
   static const List<String> days = [
     'Luni',
     'Marti',
-    Miercuri',
+    'Miercuri',
     'Joi',
     'Vineri',
     'Sambata',
