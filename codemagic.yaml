@@ -6,15 +6,13 @@ workflows:
     environment:
       flutter: stable
       java: 17
-      vars:
-        JAVA_HOME: /usr/libexec/java_home -v 17
     triggering:
       events:
         - push
     scripts:
       - name: Set Java 17
         script: |
-          export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+          export JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home
           export PATH=$JAVA_HOME/bin:$PATH
           java -version
       - name: Get Flutter packages
