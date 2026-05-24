@@ -44,7 +44,6 @@ class BleProvider extends ChangeNotifier {
       // Pornește scanarea
       await _flutterBlue.startScan(
         timeout: const Duration(seconds: 10),
-        allowDuplicates: false,
       );
 
       // Ascultă rezultatele scanării
