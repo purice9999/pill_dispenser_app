@@ -3,6 +3,8 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 /// Provider pentru gestionarea conexiunilor BLE
 class BleProvider extends ChangeNotifier {
+  final FlutterBluePlus _flutterBlue = FlutterBluePlus();
+
   // Dispozitive BLE găsite
   List<ScanResult> _scanResults = [];
 
@@ -40,19 +42,20 @@ class BleProvider extends ChangeNotifier {
       notifyListeners();
 
       // Pornește scanarea
-      await FlutterBluePlus.startScan(
+      await _flutterBlue.startScan(
         timeout: const Duration(seconds: 10),
+        allowDuplicates: false,
       );
 
       // Ascultă rezultatele scanării
-      FlutterBluePlus.scanResults.listen((results) {
+      _flutterBlue.scanResults.listen((results) {
         _scanResults = results;
         notifyListeners();
       });
 
       // Oprește scanarea după 10 secunde
       await Future.delayed(const Duration(seconds: 10));
-      await FlutterBluePlus.stopScan();
+      await _flutterBlue.stopScan();
       _isScanning = false;
       notifyListeners();
     } catch (e) {
@@ -65,7 +68,7 @@ class BleProvider extends ChangeNotifier {
   /// Oprește scanarea
   Future<void> stopScan() async {
     try {
-      await FlutterBluePlus.stopScan();
+      await _flutterBlue.stopScan();
       _isScanning = false;
       notifyListeners();
     } catch (e) {
@@ -80,10 +83,7 @@ class BleProvider extends ChangeNotifier {
       _statusMessage = 'Se conectează...';
       notifyListeners();
 
-      await device.connect(
-        timeout: const Duration(seconds: 10),
-        autoConnect: false,
-      );
+      await device.connect(timeout: const Duration(seconds: 10));
       _connectedDevice = device;
       _isConnected = true;
       _statusMessage = 'Conectat la ${device.name}';

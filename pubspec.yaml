@@ -11,8 +11,8 @@ dependencies:
   flutter:
     sdk: flutter
   
-  # BLE
-  flutter_blue_plus: ^2.3.3
+  # BLE - versiune stabil
+  flutter_blue_plus: ^1.31.0
   
   # Local storage
   sqflite: ^2.3.0
