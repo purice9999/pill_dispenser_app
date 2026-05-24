@@ -13,10 +13,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
-    kotlinOptions {
-        jvmTarget = "11"
-    }
-
     defaultConfig {
         applicationId = "com.example.pill_dispenser"
         minSdk = flutter.minSdkVersion
