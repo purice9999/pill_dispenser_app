@@ -80,7 +80,10 @@ class BleProvider extends ChangeNotifier {
       _statusMessage = 'Se conectează...';
       notifyListeners();
 
-      await device.connect();
+      await device.connect(
+        timeout: const Duration(seconds: 10),
+        autoConnect: false,
+      );
       _connectedDevice = device;
       _isConnected = true;
       _statusMessage = 'Conectat la ${device.name}';
