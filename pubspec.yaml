@@ -43,3 +43,9 @@ flutter:
         - asset: assets/fonts/Roboto-Bold.ttf
           weight: 700
 
+# Android configuration
+android:
+  compileSdkVersion: 34
+  minSdkVersion: 21
+  targetSdkVersion: 34
+
