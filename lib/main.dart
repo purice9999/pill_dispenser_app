@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/ble_provider.dart';
 import 'providers/history_provider.dart';
+import 'providers/alarm_provider.dart';
 import 'screens/home_screen.dart';
 
 void main() async {
@@ -18,6 +19,9 @@ class PillDispenserApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => BleProvider()),
         ChangeNotifierProvider(create: (_) => HistoryProvider()),
+        ChangeNotifierProvider(
+          create: (_) => AlarmProvider()..initDatabase(),
+        ),
       ],
       child: MaterialApp(
         title: 'Pill Dispenser',

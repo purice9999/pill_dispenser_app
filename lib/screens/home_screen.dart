@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/ble_provider.dart';
+import '../providers/alarm_provider.dart';
 import 'set_alarm_screen.dart';
 import 'history_screen.dart';
+import 'alarms_screen.dart';
+import 'manage_alarms_screen.dart';
 
 /// Ecranul principal cu navigare între SetAlarm și History
 class HomeScreen extends StatefulWidget {
