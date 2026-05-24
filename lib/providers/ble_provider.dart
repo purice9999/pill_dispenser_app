@@ -4,27 +4,27 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 /// Provider pentru gestionarea conexiunilor BLE
 class BleProvider extends ChangeNotifier {
   final FlutterBluePlus _flutterBlue = FlutterBluePlus();
-  
+
   // Dispozitive BLE găsite
   List<ScanResult> _scanResults = [];
-  
+
   // Dispozitiv conectat
   BluetoothDevice? _connectedDevice;
-  
+
   // Caracteristica pentru scriere/citire
   BluetoothCharacteristic? _writeCharacteristic;
   BluetoothCharacteristic? _notifyCharacteristic;
-  
+
   // Stări
   bool _isScanning = false;
   bool _isConnected = false;
   String _statusMessage = 'Deconectat';
-  
+
   // Mesaje primite
   List<String> _receivedMessages = [];
 
   // ─── GETTERS ────────────────────────────────────────────────────────────
-  
+
   List<ScanResult> get scanResults => _scanResults;
   bool get isScanning => _isScanning;
   bool get isConnected => _isConnected;
@@ -130,10 +130,10 @@ class BleProvider extends ChangeNotifier {
 
       // Convertește stringul în bytes
       List<int> bytes = command.codeUnits;
-      
+
       // Trimite datele
       await _writeCharacteristic!.write(bytes, withoutResponse: false);
-      
+
       _statusMessage = 'Comandă trimisă: $command';
       notifyListeners();
       return true;
