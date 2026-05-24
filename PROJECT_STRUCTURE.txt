@@ -1,0 +1,242 @@
+pill_dispenser_app/
+│
+├── 📄 pubspec.yaml                          # Dependențe Flutter
+├── 📄 README.md                             # Documentație completă
+├── 📄 QUICK_START.md                        # Pornire rapidă
+├── 📄 SETUP_GUIDE.md                        # Ghid detaliat de configurare
+├── 📄 ARCHITECTURE.md                       # Arhitectura aplicației
+├── 📄 HM10_FIRMWARE_EXAMPLE.ino             # Cod exemplu pentru microcontroller
+├── 📄 PROJECT_STRUCTURE.txt                 # Acest fișier
+│
+├── 📁 lib/                                  # Codul sursă Flutter
+│   ├── 📄 main.dart                         # Punct de intrare
+│   │
+│   ├── 📁 providers/                        # State Management (Provider pattern)
+│   │   ├── 📄 ble_provider.dart             # Gestionare BLE
+│   │   │   ├── startScan()
+│   │   │   ├── connectToDevice()
+│   │   │   ├── sendCommand()
+│   │   │   ├── disconnectDevice()
+│   │   │   └── _handleReceivedData()
+│   │   │
+│   │   └── 📄 history_provider.dart         # Gestionare istoric
+│   │       ├── _initializeDatabase()
+│   │       ├── _loadHistory()
+│   │       ├── addEntry()
+│   │       ├── clearHistory()
+│   │       └── deleteEntry()
+│   │
+│   ├── 📁 models/                           # Modele de date
+│   │   └── 📄 history_entry.dart            # Model pentru intrări istoric
+│   │       ├── id: int?
+│   │       ├── message: String
+│   │       ├── timestamp: DateTime
+│   │       ├── toMap()
+│   │       ├── fromMap()
+│   │       └── formattedDateTime
+│   │
+│   └── 📁 screens/                          # Ecrane UI
+│       ├── 📄 home_screen.dart              # Ecran principal cu navigare
+│       │   ├── SetAlarmScreen (Tab 1)
+│       │   └── HistoryScreen (Tab 2)
+│       │
+│       ├── 📄 set_alarm_screen.dart         # Setare alarme
+│       │   ├── Day Selector (Luni-Duminică)
+│       │   ├── Moment Selector (Dimineață, Prânz, Seară)
+│       │   ├── Time Picker
+│       │   ├── BLE Connection Status
+│       │   ├── Send Button
+│       │   └── Confirmation Message
+│       │
+│       ├── 📄 history_screen.dart           # Vizualizare istoric
+│       │   ├── History List
+│       │   ├── Clear Button
+│       │   └── Delete Buttons (per entry)
+│       │
+│       └── 📄 ble_connection_screen.dart    # Conectare BLE
+│           ├── Scan Status
+│           ├── Rescan Button
+│           ├── Device List
+│           └── Connect Buttons
+│
+├── 📁 ios/                                  # Configurare iOS
+│   ├── 📁 Runner/
+│   │   ├── 📄 Info.plist                    # Permisiuni BLE + configurare
+│   │   │   ├── NSBluetoothCentralUsageDescription
+│   │   │   └── NSBluetoothPeripheralUsageDescription
+│   │   │
+│   │   └── 📁 Assets.xcassets/              # Imagini și icoane
+│   │
+│   ├── 📄 Podfile                           # Dependențe CocoaPods
+│   └── 📄 Runner.xcworkspace                # Workspace Xcode
+│
+├── 📁 android/                              # Configurare Android
+│   ├── 📁 app/
+│   │   ├── 📁 src/main/
+│   │   │   ├── 📄 AndroidManifest.xml       # Permisiuni BLE
+│   │   │   │   ├── BLUETOOTH
+│   │   │   │   ├── BLUETOOTH_ADMIN
+│   │   │   │   ├── BLUETOOTH_SCAN
+│   │   │   │   ├── BLUETOOTH_CONNECT
+│   │   │   │   └── ACCESS_FINE_LOCATION
+│   │   │   │
+│   │   │   ├── 📁 kotlin/
+│   │   │   │   └── MainActivity.kt
+│   │   │   │
+│   │   │   └── 📁 res/
+│   │   │       ├── 📁 drawable/
+│   │   │       ├── 📁 mipmap/
+│   │   │       └── 📁 values/
+│   │   │
+│   │   ├── 📄 build.gradle                  # Build configuration
+│   │   └── 📄 settings.gradle
+│   │
+│   ├── 📄 build.gradle
+│   ├── 📄 settings.gradle
+│   └── 📄 gradle.properties
+│
+├── 📁 assets/                               # Resurse (imagini, fonturi)
+│   ├── 📁 images/
+│   └── 📁 fonts/
+│
+├── 📁 test/                                 # Teste unitare
+│   └── 📄 widget_test.dart
+│
+└── 📁 .dart_tool/                           # Fișiere generate (ignoră)
+
+
+═══════════════════════════════════════════════════════════════════════════════
+
+FLUXUL DATELOR:
+
+1. UTILIZATOR INTERACȚIONEAZĂ
+   └─ SetAlarmScreen: Selectează zi, moment, oră
+
+2. APASĂ "TRIMITE LA DISPOZITIV"
+   └─ _sendAlarm() creează comanda: "Luni Dimineata 08:30"
+
+3. BLE PROVIDER TRIMITE
+   └─ sendCommand() → convertește string în bytes → scrie pe FFE1
+
+4. HM-10 PRIMEȘTE
+   └─ Transmite la microcontroller prin UART
+
+5. MICROCONTROLLER PROCESEAZĂ
+   └─ Parsează comanda → activează motor → eliberează pastila
+
+6. CONFIRMARE ÎNAPOI
+   └─ Microcontroller trimite: "Pastila luata"
+
+7. HM-10 TRANSMITE NOTIFICARE
+   └─ Aplicația primește pe FFE1 (notify)
+
+8. ISTORIC SALVEAZĂ
+   └─ HistoryProvider.addEntry() → SQLite database
+
+9. UI SE ACTUALIZEAZĂ
+   └─ Consumer<HistoryProvider> rebuild → afișează în HistoryScreen
+
+
+═══════════════════════════════════════════════════════════════════════════════
+
+BAZA DE DATE (SQLite):
+
+Tabel: history
+┌────┬──────────────────────────────────────────┬──────────────────────────────┐
+│ id │ message                                  │ timestamp                    │
+├────┼──────────────────────────────────────────┼──────────────────────────────┤
+│ 1  │ Alarmă trimisă: Luni Dimineata 08:30    │ 2026-05-18T22:55:00.000000  │
+│ 2  │ Pastila luata                            │ 2026-05-18T08:30:15.000000  │
+│ 3  │ Alarmă trimisă: Marți Prânz 12:00       │ 2026-05-19T10:20:00.000000  │
+└────┴──────────────────────────────────────────┴──────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════════
+
+DEPENDENȚE (pubspec.yaml):
+
+flutter_blue_plus: ^1.31.0    # BLE Communication
+sqflite: ^2.3.0               # Local Database
+provider: ^6.0.0              # State Management
+intl: ^0.19.0                 # Internationalization
+path: ^1.8.3                  # Path Manipulation
+uuid: ^4.0.0                  # UUID Generation
+
+
+═══════════════════════════════════════════════════════════════════════════════
+
+PERMISIUNI:
+
+iOS (Info.plist):
+├── NSBluetoothCentralUsageDescription
+└── NSBluetoothPeripheralUsageDescription
+
+Android (AndroidManifest.xml):
+├── BLUETOOTH
+├── BLUETOOTH_ADMIN
+├── BLUETOOTH_SCAN
+├── BLUETOOTH_CONNECT
+└── ACCESS_FINE_LOCATION
+
+
+═══════════════════════════════════════════════════════════════════════════════
+
+COMENZI UTILE:
+
+flutter pub get              # Instalează dependențe
+flutter run                  # Rulează pe dispozitiv
+flutter run -d android       # Rulează pe Android
+flutter run -d ios           # Rulează pe iOS
+flutter build apk --release  # Build APK
+flutter build ios --release  # Build iOS
+flutter clean                # Curăță build
+flutter analyze              # Analizează cod
+flutter format lib/          # Formatează cod
+flutter test                 # Rulează teste
+
+
+═══════════════════════════════════════════════════════════════════════════════
+
+FIȘIERE IMPORTANTE:
+
+pubspec.yaml                 # Dependențe și configurare
+lib/main.dart                # Punct de intrare
+lib/providers/ble_provider.dart        # Gestionare BLE
+lib/providers/history_provider.dart    # Gestionare istoric
+lib/screens/set_alarm_screen.dart      # Setare alarme
+lib/screens/history_screen.dart        # Vizualizare istoric
+ios/Runner/Info.plist        # Permisiuni iOS
+android/app/src/main/AndroidManifest.xml  # Permisiuni Android
+
+
+═══════════════════════════════════════════════════════════════════════════════
+
+DOCUMENTAȚIE:
+
+README.md                    # Documentație completă
+QUICK_START.md               # Pornire rapidă
+SETUP_GUIDE.md               # Ghid detaliat
+ARCHITECTURE.md              # Arhitectura
+HM10_FIRMWARE_EXAMPLE.ino    # Cod exemplu microcontroller
+
+
+═══════════════════════════════════════════════════════════════════════════════
+
+VERSIUNI:
+
+Flutter: 3.0+
+Dart: 3.0+
+iOS: 11.0+
+Android: 21+
+
+
+═══════════════════════════════════════════════════════════════════════════════
+
+CONTACT & SUPORT:
+
+Flutter: https://flutter.dev
+flutter_blue_plus: https://pub.dev/packages/flutter_blue_plus
+SQLite: https://pub.dev/packages/sqflite
+Provider: https://pub.dev/packages/provider
+
+═══════════════════════════════════════════════════════════════════════════════
