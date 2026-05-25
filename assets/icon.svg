@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0.8" y2="1">
+      <stop offset="0%" stop-color="#1565C0"/>
+      <stop offset="100%" stop-color="#0A237A"/>
+    </linearGradient>
+    <linearGradient id="pillRight" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#64B5F6"/>
+      <stop offset="100%" stop-color="#42A5F5"/>
+    </linearGradient>
+    <filter id="pillShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000" flood-opacity="0.30"/>
+    </filter>
+    <filter id="bellShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000" flood-opacity="0.20"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="230" fill="url(#bgGrad)"/>
+
+  <!-- Subtle background rings -->
+  <circle cx="512" cy="512" r="430" fill="none" stroke="white" stroke-width="2" opacity="0.06"/>
+  <circle cx="512" cy="512" r="340" fill="none" stroke="white" stroke-width="1.5" opacity="0.04"/>
+
+  <!-- Pill capsule, tilted -22deg, centered -->
+  <!-- Geometry: cx=512, cy=490, half-width=310, half-height=125, rx=125 -->
+  <!-- Straight section: x from 202+125=327 to 822-125=697, y from 365 to 615 -->
+  <!-- Left arc center: (327, 490), Right arc center: (697, 490) -->
+  <g transform="rotate(-22, 512, 490)" filter="url(#pillShadow)">
+
+    <!-- White left half -->
+    <path d="
+      M 512,365
+      L 327,365
+      A 125,125 0 0,0 327,615
+      L 512,615
+      Z
+    " fill="white"/>
+
+    <!-- Blue right half -->
+    <path d="
+      M 512,365
+      L 697,365
+      A 125,125 0 0,1 697,615
+      L 512,615
+      Z
+    " fill="url(#pillRight)"/>
+
+    <!-- Center split line -->
+    <rect x="505" y="358" width="14" height="264" rx="7" fill="white" opacity="0.45"/>
+
+    <!-- Highlight on left half -->
+    <path d="M 340,375 Q 430,360 512,368 L 512,390 Q 430,382 340,397 Z"
+          fill="white" opacity="0.18"/>
+
+    <!-- Highlight on right half -->
+    <path d="M 512,368 Q 590,360 685,375 L 685,397 Q 590,382 512,390 Z"
+          fill="white" opacity="0.28"/>
+  </g>
+
+  <!-- Small second pill (decorative, top-left area) -->
+  <g transform="rotate(-22, 260, 280)" opacity="0.55">
+    <path d="M 310,255 L 220,255 A 38,38 0 0,0 220,331 L 310,331 Z" fill="white"/>
+    <path d="M 310,255 L 400,255 A 38,38 0 0,1 400,331 L 310,331 Z" fill="#90CAF9"/>
+    <rect x="307" y="251" width="6" height="84" rx="3" fill="white" opacity="0.4"/>
+  </g>
+
+  <!-- Small third pill (decorative, bottom-right) -->
+  <g transform="rotate(-22, 760, 750)" opacity="0.45">
+    <path d="M 810,725 L 720,725 A 36,36 0 0,0 720,797 L 810,797 Z" fill="white"/>
+    <path d="M 810,725 L 900,725 A 36,36 0 0,1 900,797 L 810,797 Z" fill="#90CAF9"/>
+    <rect x="807" y="721" width="6" height="80" rx="3" fill="white" opacity="0.4"/>
+  </g>
+
+  <!-- Alarm bell icon (bottom center) -->
+  <g transform="translate(512, 760)" filter="url(#bellShadow)">
+    <!-- Bell body -->
+    <path d="
+      M 0,-70
+      C -12,-70 -20,-62 -20,-50
+      C -20,-50 -75,0 -75,40
+      L -75,55
+      L 75,55
+      L 75,40
+      C 75,0 20,-50 20,-50
+      C 20,-62 12,-70 0,-70
+      Z
+    " fill="white" opacity="0.92"/>
+    <!-- Bell base -->
+    <rect x="-28" y="55" width="56" height="18" rx="9" fill="white" opacity="0.92"/>
+    <!-- Bell dot (clapper) -->
+    <circle cx="0" cy="73" r="14" fill="white" opacity="0.92"/>
+    <!-- Left ear -->
+    <circle cx="-50" cy="-72" r="12" fill="white" opacity="0.85"/>
+    <!-- Right ear -->
+    <circle cx="50" cy="-72" r="12" fill="white" opacity="0.85"/>
+  </g>
+</svg>
