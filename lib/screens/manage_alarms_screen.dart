@@ -4,7 +4,7 @@ import '../providers/alarm_provider.dart';
 import '../models/alarm.dart';
 
 class ManageAlarmsScreen extends StatefulWidget {
-  const ManageAlarmsScreen({Key? key}) : super(key: key);
+  const ManageAlarmsScreen({super.key});
 
   @override
   State<ManageAlarmsScreen> createState() => _ManageAlarmsScreenState();
@@ -14,14 +14,15 @@ class _ManageAlarmsScreenState extends State<ManageAlarmsScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() {
-      context.read<AlarmProvider>().loadAlarms();
-    });
+    final alarmProvider = context.read<AlarmProvider>();
+    Future.microtask(() => alarmProvider.loadAlarms());
   }
 
   Future<void> _editAlarm(BuildContext context, Alarm alarm) async {
-    String selectedDay = alarm.day;
-    String selectedMoment = alarm.moment;
+    int selectedDayIndex =
+        AlarmProvider.days.indexOf(alarm.day).clamp(0, AlarmProvider.days.length - 1);
+    int selectedMomentIndex =
+        AlarmProvider.moments.indexOf(alarm.moment).clamp(0, AlarmProvider.moments.length - 1);
     TimeOfDay selectedTime = _parseTime(alarm.time);
 
     await showDialog(
@@ -33,33 +34,38 @@ class _ManageAlarmsScreenState extends State<ManageAlarmsScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Selectare zi
-                DropdownButton<String>(
-                  value: selectedDay,
+                DropdownButton<int>(
+                  value: selectedDayIndex,
                   isExpanded: true,
-                  items: AlarmProvider.days
-                      .map((day) => DropdownMenuItem(value: day, child: Text(day)))
-                      .toList(),
+                  items: List.generate(
+                    AlarmProvider.daysDisplay.length,
+                    (i) => DropdownMenuItem(
+                      value: i,
+                      child: Text(AlarmProvider.daysDisplay[i]),
+                    ),
+                  ),
                   onChanged: (value) {
-                    setState(() => selectedDay = value!);
+                    setState(() => selectedDayIndex = value!);
                   },
                 ),
                 const SizedBox(height: 16),
 
-                // Selectare moment
-                DropdownButton<String>(
-                  value: selectedMoment,
+                DropdownButton<int>(
+                  value: selectedMomentIndex,
                   isExpanded: true,
-                  items: AlarmProvider.moments
-                      .map((moment) => DropdownMenuItem(value: moment, child: Text(moment)))
-                      .toList(),
+                  items: List.generate(
+                    AlarmProvider.momentsDisplay.length,
+                    (i) => DropdownMenuItem(
+                      value: i,
+                      child: Text(AlarmProvider.momentsDisplay[i]),
+                    ),
+                  ),
                   onChanged: (value) {
-                    setState(() => selectedMoment = value!);
+                    setState(() => selectedMomentIndex = value!);
                   },
                 ),
                 const SizedBox(height: 16),
 
-                // Selectare ora
                 GestureDetector(
                   onTap: () async {
                     final TimeOfDay? picked = await showTimePicker(
@@ -81,7 +87,8 @@ class _ManageAlarmsScreenState extends State<ManageAlarmsScreen> {
                       children: [
                         Text(
                           '${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}',
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                         const Icon(Icons.access_time),
                       ],
@@ -98,14 +105,15 @@ class _ManageAlarmsScreenState extends State<ManageAlarmsScreen> {
             ),
             ElevatedButton(
               onPressed: () {
-                final time = '${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}';
+                final time =
+                    '${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}';
                 context.read<AlarmProvider>().updateAlarm(
-                  alarm.id!,
-                  selectedDay,
-                  selectedMoment,
-                  time,
-                  alarm.active,
-                );
+                      alarm.id!,
+                      AlarmProvider.days[selectedDayIndex],
+                      AlarmProvider.moments[selectedMomentIndex],
+                      time,
+                      alarm.active,
+                    );
                 Navigator.pop(context);
               },
               child: const Text('Salvare'),
@@ -148,119 +156,97 @@ class _ManageAlarmsScreenState extends State<ManageAlarmsScreen> {
     );
   }
 
+  String _getDisplayDay(String day) {
+    final index = AlarmProvider.days.indexOf(day);
+    return index >= 0 ? AlarmProvider.daysDisplay[index] : day;
+  }
+
+  String _getDisplayMoment(String moment) {
+    final index = AlarmProvider.moments.indexOf(moment);
+    return index >= 0 ? AlarmProvider.momentsDisplay[index] : moment;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Gestionare Alarmă'),
-        backgroundColor: Colors.blue,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.delete_sweep),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Ștergere Toate'),
-                  content: const Text('Ești sigur că vrei să ștergi TOATE alarmele?'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Anulare'),
+    return Consumer<AlarmProvider>(
+      builder: (context, alarmProvider, _) {
+        if (alarmProvider.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (alarmProvider.alarms.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.alarm_off, size: 64, color: Colors.grey[400]),
+                const SizedBox(height: 16),
+                Text(
+                  'Nu ai nicio alarmă setată',
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return ListView.builder(
+          itemCount: alarmProvider.alarms.length,
+          itemBuilder: (context, index) {
+            final alarm = alarmProvider.alarms[index];
+            return Card(
+              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: ListTile(
+                leading: Checkbox(
+                  value: alarm.active,
+                  onChanged: (value) {
+                    alarmProvider.toggleAlarm(alarm.id!, value ?? false);
+                  },
+                ),
+                title: Text(
+                  '${_getDisplayDay(alarm.day)} - ${_getDisplayMoment(alarm.moment)} - ${alarm.time}',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: alarm.active ? Colors.black : Colors.grey,
+                    decoration: alarm.active
+                        ? TextDecoration.none
+                        : TextDecoration.lineThrough,
+                  ),
+                ),
+                subtitle: Text(
+                  'Creat: ${alarm.createdAt.day}/${alarm.createdAt.month}/${alarm.createdAt.year}',
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+                trailing: PopupMenuButton(
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      child: const Row(
+                        children: [
+                          Icon(Icons.edit, color: Colors.blue),
+                          SizedBox(width: 8),
+                          Text('Editare'),
+                        ],
+                      ),
+                      onTap: () => _editAlarm(context, alarm),
                     ),
-                    ElevatedButton(
-                      onPressed: () {
-                        context.read<AlarmProvider>().deleteAllAlarms();
-                        Navigator.pop(context);
-                      },
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                      child: const Text('Șterge Toate'),
+                    PopupMenuItem(
+                      child: const Row(
+                        children: [
+                          Icon(Icons.delete, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('Ștergere'),
+                        ],
+                      ),
+                      onTap: () => _deleteAlarm(context, alarm.id!),
                     ),
                   ],
                 ),
-              );
-            },
-          ),
-        ],
-      ),
-      body: Consumer<AlarmProvider>(
-        builder: (context, alarmProvider, _) {
-          if (alarmProvider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (alarmProvider.alarms.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.alarm_off, size: 64, color: Colors.grey[400]),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Nu ai nicio alarmă setată',
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                  ),
-                ],
               ),
             );
-          }
-
-          return ListView.builder(
-            itemCount: alarmProvider.alarms.length,
-            itemBuilder: (context, index) {
-              final alarm = alarmProvider.alarms[index];
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                child: ListTile(
-                  leading: Checkbox(
-                    value: alarm.active,
-                    onChanged: (value) {
-                      alarmProvider.toggleAlarm(alarm.id!, value ?? false);
-                    },
-                  ),
-                  title: Text(
-                    alarm.displayText,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: alarm.active ? Colors.black : Colors.grey,
-                      decoration: alarm.active ? TextDecoration.none : TextDecoration.lineThrough,
-                    ),
-                  ),
-                  subtitle: Text(
-                    'Creat: ${alarm.createdAt.day}/${alarm.createdAt.month}/${alarm.createdAt.year}',
-                    style: TextStyle(color: Colors.grey[600]),
-                  ),
-                  trailing: PopupMenuButton(
-                    itemBuilder: (context) => [
-                      PopupMenuItem(
-                        child: const Row(
-                          children: [
-                            Icon(Icons.edit, color: Colors.blue),
-                            SizedBox(width: 8),
-                            Text('Editare'),
-                          ],
-                        ),
-                        onTap: () => _editAlarm(context, alarm),
-                      ),
-                      PopupMenuItem(
-                        child: const Row(
-                          children: [
-                            Icon(Icons.delete, color: Colors.red),
-                            SizedBox(width: 8),
-                            Text('Ștergere'),
-                          ],
-                        ),
-                        onTap: () => _deleteAlarm(context, alarm.id!),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
-        },
-      ),
+          },
+        );
+      },
     );
   }
 }

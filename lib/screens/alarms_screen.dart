@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/alarm_provider.dart';
 import '../providers/ble_provider.dart';
-import '../models/alarm.dart';
 
 class AlarmsScreen extends StatefulWidget {
-  const AlarmsScreen({Key? key}) : super(key: key);
+  const AlarmsScreen({super.key});
 
   @override
   State<AlarmsScreen> createState() => _AlarmsScreenState();
@@ -71,95 +70,101 @@ class _AlarmsScreenState extends State<AlarmsScreen> {
       }
     }
 
-    if (alarmCount > 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$alarmCount alarmă(e) trimisă(e)!')),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selectează cel puțin o alarmă!')),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Setare Alarmă Multiplă'),
-        backgroundColor: Colors.blue,
-      ),
-      body: Consumer<AlarmProvider>(
-        builder: (context, alarmProvider, _) {
-          return SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  // Afișare status BLE
-                  Consumer<BleProvider>(
-                    builder: (context, bleProvider, _) {
-                      return Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: bleProvider.isConnected ? Colors.green[100] : Colors.red[100],
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: bleProvider.isConnected ? Colors.green : Colors.red,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              bleProvider.isConnected ? Icons.check_circle : Icons.error,
-                              color: bleProvider.isConnected ? Colors.green : Colors.red,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                bleProvider.statusMessage,
-                                style: TextStyle(
-                                  color: bleProvider.isConnected ? Colors.green[900] : Colors.red[900],
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Alarmă pentru fiecare zi
-                  ..._buildDayCards(),
-
-                  const SizedBox(height: 20),
-
-                  // Buton trimite
-                  ElevatedButton.icon(
-                    onPressed: () => _sendAlarmsToDevice(context),
-                    icon: const Icon(Icons.send),
-                    label: const Text('Trimite Alarmele'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          alarmCount > 0
+              ? '$alarmCount alarmă(e) trimisă(e)!'
+              : 'Selectează cel puțin o alarmă!',
+        ),
       ),
     );
   }
 
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AlarmProvider>(
+      builder: (context, alarmProvider, _) {
+        return SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                // Status BLE
+                Consumer<BleProvider>(
+                  builder: (context, bleProvider, _) {
+                    return Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: bleProvider.isConnected
+                            ? Colors.green[100]
+                            : Colors.red[100],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: bleProvider.isConnected
+                              ? Colors.green
+                              : Colors.red,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            bleProvider.isConnected
+                                ? Icons.check_circle
+                                : Icons.error,
+                            color: bleProvider.isConnected
+                                ? Colors.green
+                                : Colors.red,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              bleProvider.statusMessage,
+                              style: TextStyle(
+                                color: bleProvider.isConnected
+                                    ? Colors.green[900]
+                                    : Colors.red[900],
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 20),
+
+                ..._buildDayCards(),
+
+                const SizedBox(height: 20),
+
+                ElevatedButton.icon(
+                  onPressed: () => _sendAlarmsToDevice(context),
+                  icon: const Icon(Icons.send),
+                  label: const Text('Trimite Alarmele'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   List<Widget> _buildDayCards() {
-    return AlarmProvider.days.map((day) {
+    return List.generate(AlarmProvider.days.length, (i) {
+      final day = AlarmProvider.days[i];
+      final dayDisplay = AlarmProvider.daysDisplay[i];
       return Card(
         margin: const EdgeInsets.only(bottom: 16),
         child: Padding(
@@ -168,7 +173,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                day,
+                dayDisplay,
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -181,11 +186,13 @@ class _AlarmsScreenState extends State<AlarmsScreen> {
           ),
         ),
       );
-    }).toList();
+    });
   }
 
   List<Widget> _buildMomentRows(String day) {
-    return AlarmProvider.moments.map((moment) {
+    return List.generate(AlarmProvider.moments.length, (i) {
+      final moment = AlarmProvider.moments[i];
+      final momentDisplay = AlarmProvider.momentsDisplay[i];
       return Padding(
         padding: const EdgeInsets.only(bottom: 12),
         child: Row(
@@ -198,9 +205,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> {
                 });
               },
             ),
-            Expanded(
-              child: Text(moment),
-            ),
+            Expanded(child: Text(momentDisplay)),
             GestureDetector(
               onTap: () => _selectTime(context, day, moment),
               child: Container(
@@ -225,6 +230,6 @@ class _AlarmsScreenState extends State<AlarmsScreen> {
           ],
         ),
       );
-    }).toList();
+    });
   }
 }

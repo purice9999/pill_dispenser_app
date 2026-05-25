@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
@@ -8,7 +9,11 @@ class BleProvider extends ChangeNotifier {
   bool _isScanning = false;
   bool _isConnected = false;
   String _statusMessage = 'Deconectat';
-  List<String> _receivedMessages = [];
+  final List<String> _receivedMessages = [];
+
+  StreamSubscription<List<ScanResult>>? _scanSubscription;
+  StreamSubscription<BluetoothConnectionState>? _connectionSubscription;
+  StreamSubscription<List<int>>? _characteristicSubscription;
 
   List<ScanResult> get scanResults => _scanResults;
   bool get isScanning => _isScanning;
@@ -18,20 +23,21 @@ class BleProvider extends ChangeNotifier {
   List<String> get receivedMessages => _receivedMessages;
 
   Future<void> startScan() async {
+    if (_isScanning) return;
     try {
       _isScanning = true;
       _scanResults.clear();
       notifyListeners();
 
-      await FlutterBluePlus.startScan(timeout: const Duration(seconds: 10));
-
-      FlutterBluePlus.scanResults.listen((results) {
+      await _scanSubscription?.cancel();
+      _scanSubscription = FlutterBluePlus.scanResults.listen((results) {
         _scanResults = results;
         notifyListeners();
       });
 
-      await Future.delayed(const Duration(seconds: 10));
-      await FlutterBluePlus.stopScan();
+      await FlutterBluePlus.startScan(timeout: const Duration(seconds: 10));
+      await FlutterBluePlus.isScanning.where((scanning) => !scanning).first;
+
       _isScanning = false;
       notifyListeners();
     } catch (e) {
@@ -44,6 +50,8 @@ class BleProvider extends ChangeNotifier {
   Future<void> stopScan() async {
     try {
       await FlutterBluePlus.stopScan();
+      await _scanSubscription?.cancel();
+      _scanSubscription = null;
       _isScanning = false;
       notifyListeners();
     } catch (e) {
@@ -60,7 +68,18 @@ class BleProvider extends ChangeNotifier {
       await device.connect();
       _connectedDevice = device;
       _isConnected = true;
-      _statusMessage = 'Conectat la ${device.name}';
+      _statusMessage = 'Conectat la ${device.platformName}';
+
+      await _connectionSubscription?.cancel();
+      _connectionSubscription = device.connectionState.listen((state) {
+        if (state == BluetoothConnectionState.disconnected) {
+          _isConnected = false;
+          _connectedDevice = null;
+          _writeCharacteristic = null;
+          _statusMessage = 'Deconectat';
+          notifyListeners();
+        }
+      });
 
       await _discoverServices(device);
       notifyListeners();
@@ -76,6 +95,10 @@ class BleProvider extends ChangeNotifier {
 
   Future<void> disconnectDevice() async {
     try {
+      await _connectionSubscription?.cancel();
+      _connectionSubscription = null;
+      await _characteristicSubscription?.cancel();
+      _characteristicSubscription = null;
       if (_connectedDevice != null) {
         await _connectedDevice!.disconnect();
       }
@@ -122,20 +145,17 @@ class BleProvider extends ChangeNotifier {
 
               if (characteristic.properties.notify) {
                 await characteristic.setNotifyValue(true);
-                characteristic.onValueReceived.listen((value) {
-                  _handleReceivedData(value);
-                });
+                await _characteristicSubscription?.cancel();
+                _characteristicSubscription =
+                    characteristic.onValueReceived.listen(_handleReceivedData);
               }
             }
           }
         }
       }
 
-      if (_writeCharacteristic == null) {
-        _statusMessage = 'FFE1 nu gasit';
-      } else {
-        _statusMessage = 'Conectat';
-      }
+      _statusMessage =
+          _writeCharacteristic == null ? 'FFE1 nu gasit' : 'Conectat';
       notifyListeners();
     } catch (e) {
       _statusMessage = 'Eroare: $e';
@@ -157,7 +177,10 @@ class BleProvider extends ChangeNotifier {
 
   @override
   void dispose() {
-    disconnectDevice();
+    _scanSubscription?.cancel();
+    _connectionSubscription?.cancel();
+    _characteristicSubscription?.cancel();
+    _connectedDevice?.disconnect();
     super.dispose();
   }
 }

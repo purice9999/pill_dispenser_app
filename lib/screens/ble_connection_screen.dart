@@ -5,7 +5,7 @@ import '../providers/ble_provider.dart';
 
 /// Ecranul pentru conectarea la dispozitivul BLE HM-10
 class BleConnectionScreen extends StatefulWidget {
-  const BleConnectionScreen({Key? key}) : super(key: key);
+  const BleConnectionScreen({super.key});
 
   @override
   State<BleConnectionScreen> createState() => _BleConnectionScreenState();
@@ -161,7 +161,7 @@ class _BleConnectionScreenState extends State<BleConnectionScreen> {
     BleProvider bleProvider,
   ) {
     final device = result.device;
-    final isConnected = bleProvider.connectedDevice?.id == device.id;
+    final isConnected = bleProvider.connectedDevice?.remoteId == device.remoteId;
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8),
@@ -172,19 +172,19 @@ class _BleConnectionScreenState extends State<BleConnectionScreen> {
           color: isConnected ? Colors.green : Colors.blue,
         ),
         title: Text(
-          device.name.isEmpty ? 'Dispozitiv necunoscut' : device.name,
+          device.platformName.isEmpty ? 'Dispozitiv necunoscut' : device.platformName,
           style: TextStyle(
             fontWeight: isConnected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
         subtitle: Text(
-          device.id.toString(),
+          device.remoteId.toString(),
           style: const TextStyle(fontSize: 11),
         ),
         trailing: isConnected
             ? const Icon(Icons.check_circle, color: Colors.green)
             : ElevatedButton(
-                onPressed: () => _connectToDevice(context, device, bleProvider),
+                onPressed: () => _connectToDevice(device, bleProvider),
                 child: const Text('Conectare'),
               ),
       ),
@@ -193,58 +193,53 @@ class _BleConnectionScreenState extends State<BleConnectionScreen> {
 
   /// Conectează la dispozitivul selectat
   void _connectToDevice(
-    BuildContext context,
     BluetoothDevice device,
     BleProvider bleProvider,
   ) async {
-    // Oprește scanarea
     await bleProvider.stopScan();
 
-    // Afișează loading
+    if (!mounted) return;
+
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
+      builder: (ctx) => AlertDialog(
         content: Row(
           children: [
             const CircularProgressIndicator(),
             const SizedBox(width: 16),
             Expanded(
-              child: Text('Se conectează la ${device.name}...'),
+              child: Text('Se conectează la ${device.platformName}...'),
             ),
           ],
         ),
       ),
     );
 
-    // Încearcă conexiunea
     final success = await bleProvider.connectToDevice(device);
 
-    if (mounted) {
-      Navigator.pop(context); // Închide loading dialog
+    if (!mounted) return;
 
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Conectat la ${device.name}'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Future.delayed(const Duration(seconds: 1), () {
-          if (mounted) {
-            Navigator.pop(context); // Revine la SetAlarmScreen
-          }
-        });
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Eroare conectare: ${bleProvider.statusMessage}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        // Reia scanarea
-        bleProvider.startScan();
-      }
+    Navigator.pop(context); // Închide loading dialog
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Conectat la ${device.platformName}'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      Future.delayed(const Duration(seconds: 1), () {
+        if (mounted) Navigator.pop(context);
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Eroare conectare: ${bleProvider.statusMessage}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      bleProvider.startScan();
     }
   }
 }

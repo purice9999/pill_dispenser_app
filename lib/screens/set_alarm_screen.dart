@@ -2,34 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/ble_provider.dart';
 import '../providers/history_provider.dart';
+import '../providers/alarm_provider.dart';
 import 'ble_connection_screen.dart';
 
 /// Ecranul pentru setarea alarmei
 class SetAlarmScreen extends StatefulWidget {
-  const SetAlarmScreen({Key? key}) : super(key: key);
+  const SetAlarmScreen({super.key});
 
   @override
   State<SetAlarmScreen> createState() => _SetAlarmScreenState();
 }
 
 class _SetAlarmScreenState extends State<SetAlarmScreen> {
-  // Variabile pentru selecții
-  String _selectedDay = 'Luni';
-  String _selectedMoment = 'Dimineață';
+  // Index pentru selecție (mapăm la display și la comanda ASCII)
+  int _selectedDayIndex = 0;
+  int _selectedMomentIndex = 0;
   TimeOfDay _selectedTime = TimeOfDay.now();
-
-  // Opțiuni disponibile
-  final List<String> _days = [
-    'Luni',
-    'Marți',
-    'Miercuri',
-    'Joi',
-    'Vineri',
-    'Sâmbătă',
-    'Duminică'
-  ];
-
-  final List<String> _moments = ['Dimineață', 'Prânz', 'Seară'];
 
   String _confirmationMessage = '';
   bool _showConfirmation = false;
@@ -164,7 +152,7 @@ class _SetAlarmScreenState extends State<SetAlarmScreen> {
                   ),
                   if (bleProvider.connectedDevice != null)
                     Text(
-                      bleProvider.connectedDevice!.name,
+                      bleProvider.connectedDevice!.platformName,
                       style: const TextStyle(fontSize: 12),
                     ),
                 ],
@@ -190,22 +178,22 @@ class _SetAlarmScreenState extends State<SetAlarmScreen> {
             border: Border.all(color: Colors.blue),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: DropdownButton<String>(
-            value: _selectedDay,
+          child: DropdownButton<int>(
+            value: _selectedDayIndex,
             isExpanded: true,
             underline: const SizedBox(),
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            onChanged: (String? newValue) {
+            onChanged: (int? newIndex) {
               setState(() {
-                _selectedDay = newValue ?? 'Luni';
+                _selectedDayIndex = newIndex ?? 0;
               });
             },
-            items: _days.map<DropdownMenuItem<String>>((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value),
+            items: List.generate(AlarmProvider.daysDisplay.length, (i) {
+              return DropdownMenuItem<int>(
+                value: i,
+                child: Text(AlarmProvider.daysDisplay[i]),
               );
-            }).toList(),
+            }),
           ),
         ),
       ],
@@ -226,22 +214,22 @@ class _SetAlarmScreenState extends State<SetAlarmScreen> {
             border: Border.all(color: Colors.blue),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: DropdownButton<String>(
-            value: _selectedMoment,
+          child: DropdownButton<int>(
+            value: _selectedMomentIndex,
             isExpanded: true,
             underline: const SizedBox(),
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            onChanged: (String? newValue) {
+            onChanged: (int? newIndex) {
               setState(() {
-                _selectedMoment = newValue ?? 'Dimineață';
+                _selectedMomentIndex = newIndex ?? 0;
               });
             },
-            items: _moments.map<DropdownMenuItem<String>>((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value),
+            items: List.generate(AlarmProvider.momentsDisplay.length, (i) {
+              return DropdownMenuItem<int>(
+                value: i,
+                child: Text(AlarmProvider.momentsDisplay[i]),
               );
-            }).toList(),
+            }),
           ),
         ),
       ],
@@ -294,18 +282,22 @@ class _SetAlarmScreenState extends State<SetAlarmScreen> {
   // ─── LOGICA TRIMITERE ────────────────────────────────────────────────────
 
   void _sendAlarm(BuildContext context, BleProvider bleProvider) async {
-    // Construiește comanda: "ZI MOMENT ORA"
+    // Construiește comanda ASCII: "ZI MOMENT ORA" (fără diacritice, pentru PIC)
     final hour = _selectedTime.hour.toString().padLeft(2, '0');
     final minute = _selectedTime.minute.toString().padLeft(2, '0');
-    final command = '$_selectedDay $_selectedMoment $hour:$minute';
+    final day = AlarmProvider.days[_selectedDayIndex];
+    final moment = AlarmProvider.moments[_selectedMomentIndex];
+    final command = '$day $moment $hour:$minute';
+
+    // Cache providers before async gap
+    final historyProvider = Provider.of<HistoryProvider>(context, listen: false);
 
     // Trimite comanda prin BLE
     final success = await bleProvider.sendCommand(command);
 
+    if (!mounted) return;
+
     if (success) {
-      // Adaugă în istoric
-      final historyProvider =
-          Provider.of<HistoryProvider>(context, listen: false);
       await historyProvider.addEntry('Alarmă trimisă: $command');
 
       // Afișează confirmare

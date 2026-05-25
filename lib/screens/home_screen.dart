@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/ble_provider.dart';
 import '../providers/alarm_provider.dart';
 import 'set_alarm_screen.dart';
 import 'history_screen.dart';
 import 'alarms_screen.dart';
 import 'manage_alarms_screen.dart';
 
-/// Ecranul principal cu navigare între SetAlarm și History
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -25,6 +23,30 @@ class _HomeScreenState extends State<HomeScreen> {
     const HistoryScreen(),
   ];
 
+  void _showDeleteAllAlarmsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Ștergere Toate'),
+        content: const Text('Ești sigur că vrei să ștergi TOATE alarmele?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Anulare'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              context.read<AlarmProvider>().deleteAllAlarms();
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Șterge Toate'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -34,6 +56,14 @@ class _HomeScreenState extends State<HomeScreen> {
         centerTitle: true,
       ),
       body: _screens[_selectedIndex],
+      floatingActionButton: _selectedIndex == 2
+          ? FloatingActionButton(
+              backgroundColor: Colors.red,
+              tooltip: 'Șterge toate alarmele',
+              onPressed: () => _showDeleteAllAlarmsDialog(context),
+              child: const Icon(Icons.delete_sweep),
+            )
+          : null,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) {

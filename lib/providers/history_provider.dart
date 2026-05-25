@@ -26,7 +26,7 @@ class HistoryProvider extends ChangeNotifier {
   Future<void> _initializeDatabase() async {
     try {
       final databasePath = await getDatabasesPath();
-      final path = join(databasePath, 'pill_dispenser.db');
+      final path = join(databasePath, 'history.db');
 
       _database = await openDatabase(
         path,

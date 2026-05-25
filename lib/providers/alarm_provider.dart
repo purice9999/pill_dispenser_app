@@ -11,7 +11,7 @@ class AlarmProvider extends ChangeNotifier {
   List<Alarm> get alarms => _alarms;
   bool get isLoading => _isLoading;
 
-  // Zile ale săptămânii
+  // Zile ale săptămânii (ASCII, pentru comenzi BLE și stocare)
   static const List<String> days = [
     'Luni',
     'Marti',
@@ -19,11 +19,25 @@ class AlarmProvider extends ChangeNotifier {
     'Joi',
     'Vineri',
     'Sambata',
-    'Duminica'
+    'Duminica',
   ];
 
-  // Momente ale zilei
+  // Zile cu diacritice (pentru afișaj UI)
+  static const List<String> daysDisplay = [
+    'Luni',
+    'Marți',
+    'Miercuri',
+    'Joi',
+    'Vineri',
+    'Sâmbătă',
+    'Duminică',
+  ];
+
+  // Momente ale zilei (ASCII, pentru comenzi BLE și stocare)
   static const List<String> moments = ['Dimineata', 'Pranz', 'Seara'];
+
+  // Momente cu diacritice (pentru afișaj UI)
+  static const List<String> momentsDisplay = ['Dimineață', 'Prânz', 'Seară'];
 
   /// Inițializează baza de date
   Future<void> initDatabase() async {
@@ -32,7 +46,7 @@ class AlarmProvider extends ChangeNotifier {
       notifyListeners();
 
       final databasePath = await getDatabasesPath();
-      final path = join(databasePath, 'pill_dispenser.db');
+      final path = join(databasePath, 'alarms.db');
 
       _database = await openDatabase(
         path,
@@ -55,7 +69,7 @@ class AlarmProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     } catch (e) {
-      print('Eroare inițializare bază de date: $e');
+      debugPrint('Eroare inițializare bază de date: $e');
       _isLoading = false;
       notifyListeners();
     }
@@ -70,7 +84,7 @@ class AlarmProvider extends ChangeNotifier {
       _alarms = maps.map((map) => Alarm.fromMap(map)).toList();
       notifyListeners();
     } catch (e) {
-      print('Eroare încărcare alarmă: $e');
+      debugPrint('Eroare încărcare alarmă: $e');
     }
   }
 
@@ -91,7 +105,7 @@ class AlarmProvider extends ChangeNotifier {
       _alarms.add(alarm.copyWith(id: id));
       notifyListeners();
     } catch (e) {
-      print('Eroare adăugare alarmă: $e');
+      debugPrint('Eroare adăugare alarmă: $e');
     }
   }
 
@@ -122,7 +136,7 @@ class AlarmProvider extends ChangeNotifier {
       }
       notifyListeners();
     } catch (e) {
-      print('Eroare actualizare alarmă: $e');
+      debugPrint('Eroare actualizare alarmă: $e');
     }
   }
 
@@ -140,7 +154,7 @@ class AlarmProvider extends ChangeNotifier {
       _alarms.removeWhere((a) => a.id == id);
       notifyListeners();
     } catch (e) {
-      print('Eroare ștergere alarmă: $e');
+      debugPrint('Eroare ștergere alarmă: $e');
     }
   }
 
@@ -162,7 +176,7 @@ class AlarmProvider extends ChangeNotifier {
       }
       notifyListeners();
     } catch (e) {
-      print('Eroare toggle alarmă: $e');
+      debugPrint('Eroare toggle alarmă: $e');
     }
   }
 
@@ -175,7 +189,7 @@ class AlarmProvider extends ChangeNotifier {
       _alarms.clear();
       notifyListeners();
     } catch (e) {
-      print('Eroare ștergere toate alarmele: $e');
+      debugPrint('Eroare ștergere toate alarmele: $e');
     }
   }
 
