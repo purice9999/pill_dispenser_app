@@ -144,8 +144,8 @@ static void RTC_Read(unsigned char *h, unsigned char *m, unsigned char *s,
     *s   = BCD2Dec(I2C_Read(1));   // reg 0: secunde
     *m   = BCD2Dec(I2C_Read(1));   // reg 1: minute
     *h   = BCD2Dec(I2C_Read(1));   // reg 2: ora
-    *dow = I2C_Read(1);            // reg 3: ziua sapt. (1-7, nu BCD)
-    if (*dow > 0) (*dow)--;        // 0=Luni ... 6=Duminica
+    *dow = I2C_Read(1);            // reg 3: ziua sapt. (DS1307: 1=Duminica)
+    *dow = (*dow + 5) % 7;         // conversie la 0=Luni...6=Duminica
     *dom = BCD2Dec(I2C_Read(1));   // reg 4: ziua lunii
     *mon = BCD2Dec(I2C_Read(0));   // reg 5: luna (NACK = ultimul byte)
     I2C_Stop();
