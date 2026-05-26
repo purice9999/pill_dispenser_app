@@ -3,6 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 class BleProvider extends ChangeNotifier {
+  // UUID-ul stabil al modulului HMSoft — permite conectare directa fara scan
+  static const String knownDeviceId = '9CDA8749-2042-78B8-6DF3-35A71DF625B1';
+
   List<ScanResult> _scanResults = [];
   BluetoothDevice? _connectedDevice;
   BluetoothCharacteristic? _writeCharacteristic;
@@ -21,6 +24,17 @@ class BleProvider extends ChangeNotifier {
   String get statusMessage => _statusMessage;
   BluetoothDevice? get connectedDevice => _connectedDevice;
   List<String> get receivedMessages => _receivedMessages;
+
+  /// Incearca conectare directa la HMSoft fara scan.
+  /// Returneaza true daca reuseste, false daca dispozitivul nu e in raza.
+  Future<bool> connectToKnownDevice() async {
+    try {
+      final device = BluetoothDevice.fromId(knownDeviceId);
+      return await connectToDevice(device);
+    } catch (_) {
+      return false;
+    }
+  }
 
   Future<void> startScan() async {
     if (_isScanning) return;

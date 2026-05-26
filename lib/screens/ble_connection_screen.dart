@@ -16,10 +16,12 @@ class _BleConnectionScreenState extends State<BleConnectionScreen> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) {
-        Provider.of<BleProvider>(context, listen: false).startScan();
-      }
+    Future.delayed(const Duration(milliseconds: 500), () async {
+      if (!mounted) return;
+      final ble = Provider.of<BleProvider>(context, listen: false);
+      // Incearca conectare directa la HMSoft cunoscut; fallback pe scan
+      final ok = await ble.connectToKnownDevice();
+      if (!ok && mounted) ble.startScan();
     });
   }
 
