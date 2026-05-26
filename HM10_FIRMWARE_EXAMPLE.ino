@@ -227,15 +227,39 @@ static void LED_Apply(signed char activeIdx, unsigned char blinkOn) {
 
 // ============================================================
 //  UART — HM-10 BLE (RC6=TX, RC7=RX, 9600 baud @ 8MHz)
+//  Receptie prin intrerupere cu buffer circular (64 bytes)
+//  La 9600 baud mesajul de 22 chars soseste in ~23ms — mai rapid
+//  decat bucla principala cu delay 50ms, deci FIFO (2 bytes) ar
+//  da OERR fara ISR.
 // ============================================================
+#define CIRC_SIZE 64
+static volatile char         circBuf[CIRC_SIZE];
+static volatile unsigned char circHead = 0;  // scris de ISR
+static volatile unsigned char circTail = 0;  // citit de main
+
+void interrupt isr(void) {
+    if (PIR1bits.RCIF) {
+        if (RCSTAbits.OERR) { RCSTAbits.CREN = 0; RCSTAbits.CREN = 1; }
+        char c = (char)RCREG;
+        unsigned char next = (circHead + 1) & (CIRC_SIZE - 1);
+        if (next != circTail) {   // buffer nu e plin
+            circBuf[circHead] = c;
+            circHead = next;
+        }
+    }
+}
+
 static void UART_Init(void) {
     TRISC6 = 0;
     TRISC7 = 1;
-    SPBRG           = 51;     // 9600 baud @ 8MHz, BRGH=1
-    TXSTAbits.BRGH  = 1;
-    TXSTAbits.TXEN  = 1;
-    RCSTAbits.SPEN  = 1;
-    RCSTAbits.CREN  = 1;
+    SPBRG          = 51;
+    TXSTAbits.BRGH = 1;
+    TXSTAbits.TXEN = 1;
+    RCSTAbits.SPEN = 1;
+    RCSTAbits.CREN = 1;
+    PIE1bits.RCIE        = 1;  // intrerupere UART RX
+    INTCONbits.PEIE      = 1;  // intreruperi periferice
+    INTCONbits.GIE       = 1;  // intreruperi globale
 }
 
 static void UART_SendStr(const char *s) {
@@ -249,15 +273,17 @@ static void UART_SendStr(const char *s) {
 static char          rxBuf[RX_BUF_SIZE];
 static unsigned char rxIdx = 0;
 
+// Citeste din buffer circular (populat de ISR); returneaza 1 cand linia e completa
 static unsigned char UART_ReadLine(void) {
-    if (!PIR1bits.RCIF) return 0;
-    if (RCSTAbits.OERR) { RCSTAbits.CREN = 0; RCSTAbits.CREN = 1; }
-    char c = (char)RCREG;
-    if (c == '\r' || c == '\n') {
-        if (rxIdx > 0) { rxBuf[rxIdx] = '\0'; rxIdx = 0; return 1; }
-        return 0;
+    while (circTail != circHead) {
+        char c = circBuf[circTail];
+        circTail = (circTail + 1) & (CIRC_SIZE - 1);
+        if (c == '\r' || c == '\n') {
+            if (rxIdx > 0) { rxBuf[rxIdx] = '\0'; rxIdx = 0; return 1; }
+            continue;
+        }
+        if (rxIdx < RX_BUF_SIZE - 1) rxBuf[rxIdx++] = c;
     }
-    if (rxIdx < RX_BUF_SIZE - 1) rxBuf[rxIdx++] = c;
     return 0;
 }
 
