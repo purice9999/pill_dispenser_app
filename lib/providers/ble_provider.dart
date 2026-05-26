@@ -135,8 +135,12 @@ class BleProvider extends ChangeNotifier {
         return false;
       }
 
-      List<int> bytes = command.codeUnits;
-      await _writeCharacteristic!.write(bytes, withoutResponse: false);
+      final bytes = command.codeUnits;
+      // BLE MTU = 20 bytes max per write — trimite in chunk-uri
+      for (int i = 0; i < bytes.length; i += 20) {
+        final chunk = bytes.sublist(i, i + 20 < bytes.length ? i + 20 : bytes.length);
+        await _writeCharacteristic!.write(chunk, withoutResponse: false);
+      }
       _statusMessage = 'Trimis: $command';
       notifyListeners();
       return true;
