@@ -481,13 +481,24 @@ void main(void) {
 
         // ── Comanda noua de la aplicatie ──────────────────────
         if (UART_ReadLine()) {
-            unsigned char idx = ParseCommand(rxBuf);
-            if (idx != 255) {
-                UART_SendStr("OK\r\n");
-                lastAlarmIdx = idx;
-                lcdState = LCD_RECEIVED;
-                lcdTimer = 3;                // afiseaza 3 secunde
-                LCD_ShowAlarmSet(idx);
+            // Comanda de test: activeaza imediat alarma 0 pt. verificare hardware
+            if (strcmp(rxBuf, "TEST") == 0) {
+                if (alarms[0].h < 0) { alarms[0].h = 12; alarms[0].m = 0; }
+                activeIdx = 0;
+                blinkOn   = 1;
+                loopCnt   = 0;
+                lcdState  = LCD_ACTIVE;
+                LCD_ShowAlarmActive(0);
+                UART_SendStr("TEST OK\r\n");
+            } else {
+                unsigned char idx = ParseCommand(rxBuf);
+                if (idx != 255) {
+                    UART_SendStr("OK\r\n");
+                    lastAlarmIdx = idx;
+                    lcdState = LCD_RECEIVED;
+                    lcdTimer = 3;
+                    LCD_ShowAlarmSet(idx);
+                }
             }
         }
 
