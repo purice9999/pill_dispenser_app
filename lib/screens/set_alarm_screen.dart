@@ -287,7 +287,7 @@ class _SetAlarmScreenState extends State<SetAlarmScreen> {
     final minute = _selectedTime.minute.toString().padLeft(2, '0');
     final day = AlarmProvider.days[_selectedDayIndex];
     final moment = AlarmProvider.moments[_selectedMomentIndex];
-    final command = '$day $moment $hour:$minute';
+    final command = '$day $moment $hour:$minute\r\n';
 
     // Cache providers before async gap
     final historyProvider = Provider.of<HistoryProvider>(context, listen: false);
