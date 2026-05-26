@@ -448,6 +448,8 @@ void main(void) {
     unsigned char lastFiredH = 255;
     unsigned char lastFiredM = 255;
     unsigned char lastFiredD = 255;
+    unsigned int  ledOffTimer  = 0;    // secunde ramase pana LED confirmat se stinge
+    signed char   confirmedIdx = -1;   // indexul LED-ului care asteapta stingerea
 
     while (1) {
 
@@ -474,6 +476,16 @@ void main(void) {
                 lcdTimer--;
                 if (lcdTimer == 0 && lcdState != LCD_ACTIVE) {
                     lcdState = LCD_NORMAL;
+                }
+            }
+
+            // Timer LED confirmat: se stinge dupa 30 minute (1800 secunde)
+            if (ledOffTimer > 0) {
+                ledOffTimer--;
+                if (ledOffTimer == 0 && confirmedIdx >= 0) {
+                    pState[LEDS[confirmedIdx].port_id] &= ~LEDS[confirmedIdx].mask;
+                    confirmedIdx = -1;
+                    LED_Apply(-1, 0);
                 }
             }
 
@@ -509,6 +521,8 @@ void main(void) {
             if (BTN == 1) {
                 // Confirmare pastila luata
                 pState[LEDS[activeIdx].port_id] |= LEDS[activeIdx].mask;
+                confirmedIdx = activeIdx;   // LED ramane aprins 30 minute
+                ledOffTimer  = 1800;        // 30 minute * 60 secunde
                 lastFiredH = h;
                 lastFiredM = m;
                 lastFiredD = dow;
@@ -522,7 +536,7 @@ void main(void) {
 
                 activeIdx = -1;
                 blinkOn   = 0;
-                LED_Apply(-1, 0);
+                LED_Apply(-1, 0);   // LED aprins din pState
                 __delay_ms(200);
             } else {
                 loopCnt++;
