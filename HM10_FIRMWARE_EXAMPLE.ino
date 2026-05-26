@@ -237,7 +237,7 @@ static volatile char         circBuf[CIRC_SIZE];
 static volatile unsigned char circHead = 0;  // scris de ISR
 static volatile unsigned char circTail = 0;  // citit de main
 
-void interrupt isr(void) {
+void __interrupt() isr(void) {
     if (PIR1bits.RCIF) {
         if (RCSTAbits.OERR) { RCSTAbits.CREN = 0; RCSTAbits.CREN = 1; }
         char c = (char)RCREG;
