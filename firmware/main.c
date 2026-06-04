@@ -512,17 +512,12 @@ void main(void) {
 
     LCD_Init();
     I2C_Init();
+    __delay_ms(500);
     UART_Init();
 
-    // Reseteaza RTC daca valorile sunt invalide (corupte)
-    // 23:41:00, Joi (5), 04/06/2026
-    {
-        unsigned char th, tm, ts, tdow, tdom, tmon;
-        RTC_Read(&th, &tm, &ts, &tdow, &tdom, &tmon);
-        if (th > 23 || tm > 59 || ts > 59 || tdom > 31 || tmon > 12 || tmon == 0) {
-            RTC_SetTime(23, 41, 0, 5, 4, 6, 26);
-        }
-    }
+    // Seteaza RTC: 23:52:00, Joi (5), 04/06/2026
+    // Dupa ce ora e corecta, aceasta linie poate fi stearsa
+    RTC_SetTime(23, 52, 0, 5, 4, 6, 26);
 
     // Initializeaza EEPROM daca e prima pornire (0xFF = sters din fabrica)
     if (EEPROM_Read(0x00) == 0xFF) EEPROM_Write(0x00, 0);
