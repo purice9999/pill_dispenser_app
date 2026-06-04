@@ -62,11 +62,11 @@ class HistoryProvider extends ChangeNotifier {
     try {
       if (_database == null) return;
 
-      // Deduplicare: ignora daca acelasi mesaj a aparut in ultimele 60s
+      // Deduplicare: ignora daca acelasi mesaj a aparut in ultimele 5s
       final now = DateTime.now();
       final isDuplicate = _history.any((e) =>
           e.message == message &&
-          now.difference(e.timestamp).inSeconds.abs() < 60,
+          now.difference(e.timestamp).inSeconds.abs() < 5,
       );
       if (isDuplicate) return;
 
