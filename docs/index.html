@@ -3,42 +3,87 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Monitorizare Pastile</title>
+  <title>PillDispenser — Monitorizare</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:      #3b82f6;
+      --blue-dark: #1d4ed8;
+      --green:     #22c55e;
+      --red:       #ef4444;
+      --amber:     #f59e0b;
+      --gray-50:   #f8fafc;
+      --gray-100:  #f1f5f9;
+      --gray-200:  #e2e8f0;
+      --gray-400:  #94a3b8;
+      --gray-600:  #475569;
+      --gray-800:  #1e293b;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+      --radius: 16px;
+    }
 
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #f0f4f8;
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      background: var(--gray-50);
+      color: var(--gray-800);
       min-height: 100vh;
     }
 
+    /* ── HEADER ── */
     header {
-      background: linear-gradient(135deg, #2563eb, #1e40af);
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 55%, #60a5fa 100%);
       color: white;
-      padding: 24px 32px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+      padding: 28px 40px 32px;
     }
 
-    header .icon { font-size: 36px; }
-
-    header h1 { font-size: 22px; font-weight: 700; }
-    header p  { font-size: 13px; opacity: 0.8; margin-top: 2px; }
-
-    .live-dot {
-      margin-left: auto;
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 20px;
+    }
+
+    .header-icon { font-size: 48px; }
+
+    .header-text h1 {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .header-text p {
       font-size: 13px;
-      opacity: 0.9;
+      opacity: 0.72;
+      margin-top: 4px;
+    }
+
+    .header-right {
+      margin-left: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 999px;
+      padding: 5px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      backdrop-filter: blur(4px);
     }
 
     .dot {
-      width: 10px; height: 10px;
+      width: 8px; height: 8px;
       background: #4ade80;
       border-radius: 50%;
       animation: pulse 1.5s infinite;
@@ -46,129 +91,273 @@
 
     @keyframes pulse {
       0%, 100% { opacity: 1; transform: scale(1); }
-      50%       { opacity: 0.5; transform: scale(1.3); }
+      50%       { opacity: 0.45; transform: scale(1.5); }
     }
 
-    .container {
-      max-width: 720px;
-      margin: 32px auto;
-      padding: 0 16px;
+    .header-date {
+      font-size: 13px;
+      opacity: 0.65;
     }
 
-    /* ─── STATISTICI ─── */
-    .stats {
+    /* ── MAIN ── */
+    .main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 20px 52px;
+    }
+
+    /* ── STATS GRID ── */
+    .stats-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 16px;
-      margin-bottom: 32px;
+      margin-bottom: 24px;
     }
 
     .stat-card {
       background: white;
-      border-radius: 16px;
-      padding: 20px;
-      text-align: center;
-      box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+      border-radius: var(--radius);
+      padding: 22px 24px;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      overflow: hidden;
     }
 
-    .stat-card .num {
-      font-size: 36px;
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+    }
+
+    .stat-total::before   { background: var(--blue); }
+    .stat-luata::before   { background: var(--green); }
+    .stat-neluata::before { background: var(--red); }
+    .stat-rate::before    { background: var(--amber); }
+
+    .stat-icon {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+
+    .stat-num {
+      font-size: 42px;
       font-weight: 800;
+      line-height: 1;
+      margin-bottom: 5px;
+    }
+
+    .stat-total   .stat-num { color: var(--blue); }
+    .stat-luata   .stat-num { color: var(--green); }
+    .stat-neluata .stat-num { color: var(--red); }
+    .stat-rate    .stat-num { color: var(--amber); }
+
+    .stat-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--gray-400);
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+    }
+
+    /* ── CHARTS ROW ── */
+    .charts-row {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background: white;
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--gray-600);
+      margin-bottom: 20px;
+      letter-spacing: -0.2px;
+    }
+
+    /* Donut */
+    .donut-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .donut-canvas-wrap {
+      position: relative;
+      width: 170px; height: 170px;
+    }
+
+    .donut-center {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .donut-center-num {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--gray-800);
       line-height: 1;
     }
 
-    .stat-card .label {
-      font-size: 12px;
-      color: #64748b;
-      margin-top: 6px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+    .donut-center-label {
+      font-size: 11px;
+      color: var(--gray-400);
+      margin-top: 2px;
     }
 
-    .stat-total .num { color: #2563eb; }
-    .stat-luata  .num { color: #16a34a; }
-    .stat-neluata .num { color: #dc2626; }
+    .donut-legend {
+      display: flex;
+      gap: 20px;
+      margin-top: 18px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--gray-600);
+    }
 
-    /* ─── LISTA EVENTS ─── */
-    .section-title {
-      font-size: 15px;
-      font-weight: 700;
-      color: #374151;
-      margin-bottom: 12px;
+    .legend-item {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 7px;
     }
 
-    #events-list { display: flex; flex-direction: column; gap: 10px; }
-
-    .event-card {
-      background: white;
-      border-radius: 14px;
-      padding: 16px 20px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      box-shadow: 0 1px 6px rgba(0,0,0,0.07);
-      border-left: 5px solid transparent;
-      animation: slideIn 0.3s ease;
-    }
-
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateY(-8px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .event-card.luata   { border-left-color: #16a34a; }
-    .event-card.neluata { border-left-color: #dc2626; }
-
-    .event-icon {
-      font-size: 28px;
+    .legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
       flex-shrink: 0;
     }
 
-    .event-body { flex: 1; }
+    /* ── TABLE ── */
+    .table-card { padding: 0; overflow: hidden; }
 
-    .event-msg {
-      font-size: 15px;
-      font-weight: 600;
-      color: #1e293b;
+    .table-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--gray-100);
     }
 
-    .event-time {
-      font-size: 12px;
-      color: #94a3b8;
-      margin-top: 3px;
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
     }
 
-    .badge {
+    thead tr {
+      background: var(--gray-50);
+      border-bottom: 2px solid var(--gray-200);
+    }
+
+    thead th {
+      padding: 11px 18px;
+      text-align: left;
       font-size: 11px;
       font-weight: 700;
+      color: var(--gray-400);
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--gray-100);
+      transition: background 0.12s;
+    }
+
+    tbody tr:hover { background: #fafbff; }
+    tbody tr:last-child { border-bottom: none; }
+
+    tbody td {
+      padding: 13px 18px;
+      vertical-align: middle;
+    }
+
+    .td-ora {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--gray-800);
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .td-zi {
+      font-weight: 600;
+      color: var(--gray-800);
+      white-space: nowrap;
+    }
+
+    .td-data {
+      color: var(--gray-600);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .td-mesaj {
+      color: var(--gray-600);
+      font-size: 13px;
+      max-width: 240px;
+    }
+
+    .moment-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      font-weight: 600;
       padding: 3px 10px;
       border-radius: 999px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      white-space: nowrap;
     }
 
-    .badge.luata   { background: #dcfce7; color: #15803d; }
-    .badge.neluata { background: #fee2e2; color: #b91c1c; }
+    .moment-dimineata { background: #fff7ed; color: #c2410c; }
+    .moment-pranz     { background: #fefce8; color: #854d0e; }
+    .moment-seara     { background: #f5f3ff; color: #6d28d9; }
+    .moment-noapte    { background: #eff6ff; color: #1d4ed8; }
 
-    /* ─── LOADING / EMPTY ─── */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      white-space: nowrap;
+    }
+
+    .status-luata   { background: #dcfce7; color: #15803d; }
+    .status-neluata { background: #fee2e2; color: #b91c1c; }
+
+    /* ── PLACEHOLDER / LOADING ── */
     .placeholder {
       text-align: center;
-      padding: 60px 20px;
-      color: #94a3b8;
+      padding: 64px 20px;
+      color: var(--gray-400);
     }
 
-    .placeholder .big { font-size: 48px; margin-bottom: 12px; }
+    .placeholder .big { font-size: 52px; margin-bottom: 14px; }
     .placeholder p    { font-size: 15px; }
 
     .spinner {
       width: 40px; height: 40px;
-      border: 4px solid #e2e8f0;
-      border-top-color: #2563eb;
+      border: 4px solid var(--gray-200);
+      border-top-color: var(--blue);
       border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+      animation: spin 0.75s linear infinite;
       margin: 0 auto 16px;
     }
 
@@ -176,69 +365,122 @@
 
     footer {
       text-align: center;
-      padding: 32px 16px;
+      padding: 24px 16px;
       font-size: 12px;
-      color: #94a3b8;
+      color: var(--gray-400);
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .charts-row { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 640px) {
+      header { padding: 20px; }
+      .header-inner { flex-wrap: wrap; gap: 12px; }
+      .header-right { width: 100%; flex-direction: row; align-items: center; justify-content: space-between; margin-left: 0; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .main { padding: 20px 12px; }
     }
   </style>
 </head>
 <body>
 
 <header>
-  <div class="icon">💊</div>
-  <div>
-    <h1>Monitorizare Pastile</h1>
-    <p>Istoric în timp real — dispozitiv PillDispenser</p>
-  </div>
-  <div class="live-dot">
-    <div class="dot"></div>
-    Live
+  <div class="header-inner">
+    <div class="header-icon">💊</div>
+    <div class="header-text">
+      <h1>PillDispenser</h1>
+      <p>Monitorizare automată — administrare medicamente</p>
+    </div>
+    <div class="header-right">
+      <div class="live-badge"><div class="dot"></div> Live</div>
+      <div class="header-date" id="header-date">—</div>
+    </div>
   </div>
 </header>
 
-<div class="container">
+<div class="main">
 
-  <!-- Statistici -->
-  <div class="stats">
+  <!-- STATISTICI -->
+  <div class="stats-grid">
     <div class="stat-card stat-total">
-      <div class="num" id="stat-total">—</div>
-      <div class="label">Total</div>
+      <div class="stat-icon">📋</div>
+      <div class="stat-num" id="stat-total">—</div>
+      <div class="stat-label">Total doze</div>
     </div>
     <div class="stat-card stat-luata">
-      <div class="num" id="stat-luata">—</div>
-      <div class="label">Luate</div>
+      <div class="stat-icon">✅</div>
+      <div class="stat-num" id="stat-luata">—</div>
+      <div class="stat-label">Pastile luate</div>
     </div>
     <div class="stat-card stat-neluata">
-      <div class="num" id="stat-neluata">—</div>
-      <div class="label">Neluate</div>
+      <div class="stat-icon">❌</div>
+      <div class="stat-num" id="stat-neluata">—</div>
+      <div class="stat-label">Pastile neluate</div>
+    </div>
+    <div class="stat-card stat-rate">
+      <div class="stat-icon">📈</div>
+      <div class="stat-num" id="stat-rate">—</div>
+      <div class="stat-label">Rată conformitate</div>
     </div>
   </div>
 
-  <!-- Lista -->
-  <div class="section-title">
-    🕐 Ultimele evenimente
+  <!-- GRAFICE -->
+  <div class="charts-row">
+    <!-- Donut -->
+    <div class="card">
+      <div class="card-title">📊 Distribuție generală</div>
+      <div class="donut-wrap">
+        <div class="donut-canvas-wrap">
+          <canvas id="donut-chart"></canvas>
+          <div class="donut-center">
+            <div class="donut-center-num" id="donut-pct">—</div>
+            <div class="donut-center-label">conformitate</div>
+          </div>
+        </div>
+        <div class="donut-legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#22c55e"></div>Luate
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#ef4444"></div>Neluate
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bar chart -->
+    <div class="card">
+      <div class="card-title">📅 Evenimente pe zi — ultimele 7 zile</div>
+      <canvas id="bar-chart"></canvas>
+    </div>
   </div>
 
-  <div id="events-list">
-    <div class="placeholder">
-      <div class="spinner"></div>
-      <p>Se încarcă datele...</p>
+  <!-- TABEL -->
+  <div class="card table-card">
+    <div class="table-header">
+      <div class="card-title" style="margin-bottom:0">🕐 Istoricul complet</div>
+    </div>
+    <div class="table-wrap" id="table-container">
+      <div class="placeholder">
+        <div class="spinner"></div>
+        <p>Se încarcă datele...</p>
+      </div>
     </div>
   </div>
 
 </div>
 
 <footer>
-  Actualizare automată în timp real &middot; PillDispenser &copy; 2025
+  Actualizare automată în timp real &middot; PillDispenser &copy; 2026
 </footer>
 
-<!-- Firebase JS SDK (CDN) -->
 <script type="module">
-  import { initializeApp }     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { initializeApp }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getFirestore, collection, query, orderBy, limit, onSnapshot }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  // ─── CONFIG Firebase (din GoogleService-Info.plist) ───────────────────────
   const firebaseConfig = {
     apiKey:            "AIzaSyC3aKsAJzqLwWYxpAfLczBKi-z5JOya2F8",
     projectId:         "pill-dispenser-2b76c",
@@ -246,80 +488,219 @@
     messagingSenderId: "1089992674991",
     appId:             "1:1089992674991:ios:4cffb0c79c43232c43ce5a",
   };
-  // ──────────────────────────────────────────────────────────────────────────
 
   const app = initializeApp(firebaseConfig);
   const db  = getFirestore(app);
 
-  const list = document.getElementById('events-list');
-  const statTotal   = document.getElementById('stat-total');
-  const statLuata   = document.getElementById('stat-luata');
-  const statNeluata = document.getElementById('stat-neluata');
+  // ── Ceas header ──
+  function updateClock() {
+    document.getElementById('header-date').textContent =
+      new Date().toLocaleDateString('ro-RO', {
+        weekday: 'long', day: 'numeric', month: 'long',
+        year: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+  }
+  updateClock();
+  setInterval(updateClock, 30000);
 
-  // Ascultă în timp real ultimele 100 de evenimente
-  const q = query(collection(db, 'history'), orderBy('timestamp', 'desc'), limit(100));
+  let donutChart = null;
+  let barChart   = null;
+
+  const q = query(
+    collection(db, 'history'),
+    orderBy('timestamp', 'desc'),
+    limit(200)
+  );
 
   onSnapshot(q, (snapshot) => {
-    if (snapshot.empty) {
-      list.innerHTML = `
-        <div class="placeholder">
-          <div class="big">📭</div>
-          <p>Nu există niciun eveniment înregistrat încă.</p>
-        </div>`;
-      statTotal.textContent   = '0';
-      statLuata.textContent   = '0';
-      statNeluata.textContent = '0';
-      return;
-    }
-
     const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-
-    // Statistici
-    const luate   = docs.filter(d => d.type === 'luata').length;
+    const luate   = docs.filter(d => d.type !== 'neluata').length;
     const neluate = docs.filter(d => d.type === 'neluata').length;
-    statTotal.textContent   = docs.length;
-    statLuata.textContent   = luate;
-    statNeluata.textContent = neluate;
+    const rate    = docs.length > 0 ? Math.round((luate / docs.length) * 100) : null;
 
-    // Render cards
-    list.innerHTML = docs.map(doc => {
-      const isLuata = doc.type !== 'neluata';
-      const icon    = isLuata ? '✅' : '❌';
-      const cls     = isLuata ? 'luata' : 'neluata';
-      const badge   = isLuata ? 'Luată' : 'Neluată';
-      const time    = doc.timestamp?.toDate
-        ? formatDate(doc.timestamp.toDate())
-        : '—';
+    // Stats
+    document.getElementById('stat-total').textContent   = docs.length;
+    document.getElementById('stat-luata').textContent   = luate;
+    document.getElementById('stat-neluata').textContent = neluate;
+    document.getElementById('stat-rate').textContent    = rate !== null ? rate + '%' : '—';
+    document.getElementById('donut-pct').textContent    = rate !== null ? rate + '%' : '—';
 
-      return `
-        <div class="event-card ${cls}">
-          <div class="event-icon">${icon}</div>
-          <div class="event-body">
-            <div class="event-msg">${escHtml(doc.message ?? 'Eveniment pastilă')}</div>
-            <div class="event-time">${time}</div>
-          </div>
-          <span class="badge ${cls}">${badge}</span>
-        </div>`;
-    }).join('');
+    renderDonut(luate, neluate);
+    renderBar(docs);
+    renderTable(docs, snapshot.empty);
+
   }, (err) => {
     console.error('Firestore error:', err);
-    list.innerHTML = `
+    document.getElementById('table-container').innerHTML = `
       <div class="placeholder">
         <div class="big">⚠️</div>
-        <p>Eroare la conectare. Verifică setările Firestore.</p>
+        <p>Eroare la conectare Firestore.</p>
         <p style="font-size:11px;margin-top:8px;color:#ef4444">${err.message}</p>
       </div>`;
   });
 
-  function formatDate(date) {
-    return date.toLocaleDateString('ro-RO', {
-      day: '2-digit', month: 'long', year: 'numeric',
-      hour: '2-digit', minute: '2-digit'
+  // ── Donut ──
+  function renderDonut(luate, neluate) {
+    const ctx = document.getElementById('donut-chart').getContext('2d');
+    if (donutChart) donutChart.destroy();
+
+    const total = luate + neluate;
+    donutChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Luate', 'Neluate'],
+        datasets: [{
+          data: total > 0 ? [luate, neluate] : [1, 0],
+          backgroundColor: total > 0 ? ['#22c55e', '#ef4444'] : ['#e2e8f0', '#e2e8f0'],
+          borderWidth: 0,
+          hoverOffset: 8,
+        }]
+      },
+      options: {
+        cutout: '72%',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            enabled: total > 0,
+            callbacks: { label: (c) => ` ${c.label}: ${c.parsed}` }
+          }
+        },
+        animation: { duration: 500 }
+      }
     });
   }
 
-  function escHtml(str) {
-    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  // ── Bar ──
+  function renderBar(docs) {
+    const labels = [], luateArr = [], neluateArr = [];
+
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().slice(0, 10);
+      const label = d.toLocaleDateString('ro-RO', { weekday: 'short', day: 'numeric', month: 'short' });
+
+      const dayDocs = docs.filter(doc => {
+        const ts = doc.timestamp?.toDate ? doc.timestamp.toDate() : null;
+        return ts && ts.toISOString().slice(0, 10) === dateStr;
+      });
+
+      labels.push(label);
+      luateArr.push(dayDocs.filter(d => d.type !== 'neluata').length);
+      neluateArr.push(dayDocs.filter(d => d.type === 'neluata').length);
+    }
+
+    const ctx = document.getElementById('bar-chart').getContext('2d');
+    if (barChart) barChart.destroy();
+
+    barChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Luate',
+            data: luateArr,
+            backgroundColor: '#86efac',
+            borderColor: '#22c55e',
+            borderWidth: 2,
+            borderRadius: 6,
+          },
+          {
+            label: 'Neluate',
+            data: neluateArr,
+            backgroundColor: '#fca5a5',
+            borderColor: '#ef4444',
+            borderWidth: 2,
+            borderRadius: 6,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: { font: { size: 12, family: 'Inter' }, boxWidth: 12, padding: 16 }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { font: { size: 11, family: 'Inter' } }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { stepSize: 1, font: { size: 11, family: 'Inter' } },
+            grid: { color: '#f1f5f9' }
+          }
+        },
+        animation: { duration: 500 }
+      }
+    });
+  }
+
+  // ── Tabel ──
+  function renderTable(docs, empty) {
+    const container = document.getElementById('table-container');
+
+    if (empty) {
+      container.innerHTML = `
+        <div class="placeholder">
+          <div class="big">📭</div>
+          <p>Nu există niciun eveniment înregistrat încă.</p>
+        </div>`;
+      return;
+    }
+
+    const rows = docs.map(doc => {
+      const ts      = doc.timestamp?.toDate ? doc.timestamp.toDate() : null;
+      const isLuata = doc.type !== 'neluata';
+      const cls     = isLuata ? 'luata' : 'neluata';
+
+      const ora    = ts ? ts.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }) : '—';
+      const ziua   = ts ? cap(ts.toLocaleDateString('ro-RO', { weekday: 'long' })) : '—';
+      const data   = ts ? ts.toLocaleDateString('ro-RO', { day: '2-digit', month: 'long', year: 'numeric' }) : '—';
+      const moment = ts ? getMoment(ts.getHours()) : { label: '—', cls: '' };
+
+      return `
+        <tr>
+          <td class="td-ora">${ora}</td>
+          <td><span class="moment-badge moment-${moment.cls}">${moment.label}</span></td>
+          <td class="td-zi">${ziua}</td>
+          <td class="td-data">${data}</td>
+          <td><span class="status-badge status-${cls}">${isLuata ? '✓ Luată' : '✗ Neluată'}</span></td>
+          <td class="td-mesaj">${escHtml(doc.message ?? '')}</td>
+        </tr>`;
+    }).join('');
+
+    container.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>Ora</th>
+            <th>Momentul zilei</th>
+            <th>Ziua</th>
+            <th>Data</th>
+            <th>Status</th>
+            <th>Mesaj dispozitiv</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+
+  function getMoment(h) {
+    if (h >= 6  && h < 12) return { label: '🌅 Dimineață', cls: 'dimineata' };
+    if (h >= 12 && h < 17) return { label: '☀️ Prânz',    cls: 'pranz' };
+    if (h >= 17 && h < 22) return { label: '🌆 Seară',    cls: 'seara' };
+    return { label: '🌙 Noapte', cls: 'noapte' };
+  }
+
+  function cap(s) { return s ? s[0].toUpperCase() + s.slice(1) : s; }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 </script>
 
