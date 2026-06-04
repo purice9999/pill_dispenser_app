@@ -103,9 +103,18 @@ class BleProvider extends ChangeNotifier {
 
       await _discoverServices(device);
 
-      // Cere sync evenimente offline stocate in EEPROM
+      // Sincronizeaza ora din telefon pe RTC si cere sync EEPROM
       if (_writeCharacteristic != null) {
         await Future.delayed(const Duration(milliseconds: 600));
+        final now = DateTime.now();
+        final dowRtc = now.weekday == 7 ? 1 : now.weekday + 1;
+        final yr = now.year % 100;
+        final timeCmd =
+            'TIME ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')} '
+            '${now.day.toString().padLeft(2, '0')} ${now.month.toString().padLeft(2, '0')} '
+            '${yr.toString().padLeft(2, '0')} $dowRtc\r\n';
+        await sendCommand(timeCmd);
+        await Future.delayed(const Duration(milliseconds: 300));
         await sendCommand('SYNC\r\n');
       }
 

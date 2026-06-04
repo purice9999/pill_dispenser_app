@@ -568,6 +568,18 @@ void main(void) {
                 UART_SendStr("TEST OK\r\n");
             } else if (strcmp(rxBuf, "SYNC") == 0) {
                 EEPROM_SendAll();
+            } else if (strncmp(rxBuf, "TIME ", 5) == 0) {
+                // Format: "TIME HH:MM DD MM YY W"
+                const char *p = rxBuf + 5;
+                unsigned char fh   = (unsigned char)((p[0]-'0')*10 + (p[1]-'0'));
+                unsigned char fm   = (unsigned char)((p[3]-'0')*10 + (p[4]-'0'));
+                unsigned char fdom = (unsigned char)((p[6]-'0')*10 + (p[7]-'0'));
+                unsigned char fmon = (unsigned char)((p[9]-'0')*10 + (p[10]-'0'));
+                unsigned char fyr  = (unsigned char)((p[12]-'0')*10 + (p[13]-'0'));
+                unsigned char fdow = (unsigned char)(p[15]-'0');
+                if (fh <= 23 && fm <= 59 && fdom >= 1 && fdom <= 31 && fmon >= 1 && fmon <= 12) {
+                    RTC_SetTime(fh, fm, 0, fdow, fdom, fmon, fyr);
+                }
             } else {
                 unsigned char idx = ParseCommand(rxBuf);
                 if (idx != 255) {
