@@ -135,6 +135,28 @@ static unsigned char BCD2Dec(unsigned char v) {
     return ((v >> 4) * 10) + (v & 0x0F);
 }
 
+static unsigned char Dec2BCD(unsigned char v) {
+    return (unsigned char)(((v / 10) << 4) | (v % 10));
+}
+
+// Scrie data/ora in DS3231
+// dow_rtc: 1=Duminica, 2=Luni, 3=Marti, 4=Miercuri, 5=Joi, 6=Vineri, 7=Sambata
+static void RTC_SetTime(unsigned char h, unsigned char m, unsigned char s,
+                        unsigned char dow_rtc, unsigned char dom,
+                        unsigned char mon, unsigned char yr) {
+    I2C_Start();
+    I2C_Write(0xD0);
+    I2C_Write(0x00);
+    I2C_Write(Dec2BCD(s));
+    I2C_Write(Dec2BCD(m));
+    I2C_Write(Dec2BCD(h));
+    I2C_Write(dow_rtc);
+    I2C_Write(Dec2BCD(dom));
+    I2C_Write(Dec2BCD(mon));
+    I2C_Write(Dec2BCD(yr));
+    I2C_Stop();
+}
+
 // Citeste ora, minutul, secunda, ziua saptamanii, ziua lunii, luna
 // DS3231 registri: 0=sec, 1=min, 2=ora, 3=dow, 4=dom, 5=luna
 // dow: 0=Luni ... 6=Duminica (conventie europeana)
@@ -491,6 +513,16 @@ void main(void) {
     LCD_Init();
     I2C_Init();
     UART_Init();
+
+    // Reseteaza RTC daca valorile sunt invalide (corupte)
+    // 23:41:00, Joi (5), 04/06/2026
+    {
+        unsigned char th, tm, ts, tdow, tdom, tmon;
+        RTC_Read(&th, &tm, &ts, &tdow, &tdom, &tmon);
+        if (th > 23 || tm > 59 || ts > 59 || tdom > 31 || tmon > 12 || tmon == 0) {
+            RTC_SetTime(23, 41, 0, 5, 4, 6, 26);
+        }
+    }
 
     // Initializeaza EEPROM daca e prima pornire (0xFF = sters din fabrica)
     if (EEPROM_Read(0x00) == 0xFF) EEPROM_Write(0x00, 0);
