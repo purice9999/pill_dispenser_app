@@ -69,3 +69,7 @@ app.*.map.json
 
 # Exceptions to above rules.
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
+
+# Firebase config (injectat la build via GitHub Secret)
+GoogleService-Info.plist
+google-services.json
