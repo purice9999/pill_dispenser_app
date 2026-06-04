@@ -111,23 +111,25 @@ static void I2C_Init(void) {
     SSPCON2 = 0;
 }
 
-static void I2C_Start(void)   { SSPCON2bits.SEN  = 1; while (SSPCON2bits.SEN); }
-static void I2C_Stop(void)    { SSPCON2bits.PEN  = 1; while (SSPCON2bits.PEN); }
-static void I2C_Restart(void) { SSPCON2bits.RSEN = 1; while (SSPCON2bits.RSEN); }
+static void I2C_Start(void)   { unsigned int t; SSPCON2bits.SEN  = 1; for(t=10000;t&&SSPCON2bits.SEN;t--); }
+static void I2C_Stop(void)    { unsigned int t; SSPCON2bits.PEN  = 1; for(t=10000;t&&SSPCON2bits.PEN;t--); }
+static void I2C_Restart(void) { unsigned int t; SSPCON2bits.RSEN = 1; for(t=10000;t&&SSPCON2bits.RSEN;t--); }
 
 static void I2C_Write(unsigned char d) {
+    unsigned int t;
     SSPBUF = d;
-    while (SSPSTATbits.BF);
-    while (SSPCON2bits.ACKSTAT);
+    for (t = 10000; t && SSPSTATbits.BF;  t--);
+    for (t = 10000; t && SSPCON2bits.ACKSTAT; t--);
 }
 
 static unsigned char I2C_Read(unsigned char ack) {
+    unsigned int t;
     SSPCON2bits.RCEN = 1;
-    while (!SSPSTATbits.BF);
+    for (t = 10000; t && !SSPSTATbits.BF; t--);
     unsigned char d = SSPBUF;
     SSPCON2bits.ACKDT = ack ? 0 : 1;
     SSPCON2bits.ACKEN = 1;
-    while (SSPCON2bits.ACKEN);
+    for (t = 10000; t && SSPCON2bits.ACKEN; t--);
     return d;
 }
 
