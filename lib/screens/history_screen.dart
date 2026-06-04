@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/history_entry.dart';
 import '../providers/history_provider.dart';
 
 /// Ecranul pentru vizualizarea istoricului pastilelor
@@ -84,14 +85,25 @@ class _HistoryScreenState extends State<HistoryScreen> {
   /// Widget pentru o intrare din istoric
   Widget _buildHistoryCard(
     BuildContext context,
-    dynamic entry,
+    HistoryEntry entry,
     HistoryProvider historyProvider,
   ) {
+    final taken = !entry.message.toLowerCase().contains('nu a fost');
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8),
+      color: taken ? Colors.green.shade50 : Colors.red.shade50,
       child: ListTile(
-        leading: const Icon(Icons.check_circle, color: Colors.green),
-        title: Text(entry.message),
+        leading: Icon(
+          taken ? Icons.check_circle : Icons.cancel,
+          color: taken ? Colors.green : Colors.red,
+        ),
+        title: Text(
+          entry.message,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: taken ? Colors.green.shade800 : Colors.red.shade800,
+          ),
+        ),
         subtitle: Text(
           entry.formattedDateTime,
           style: const TextStyle(fontSize: 12),

@@ -13,6 +13,11 @@ class BleProvider extends ChangeNotifier {
   bool _isConnected = false;
   String _statusMessage = 'Deconectat';
   final List<String> _receivedMessages = [];
+  final StringBuffer _messageBuffer = StringBuffer();
+
+  /// Apelat când dispozitivul confirmă luarea/neluarea pastilei.
+  /// Se setează din exterior (main.dart) pentru a evita dependența circulară.
+  void Function(String message)? onPillEvent;
 
   StreamSubscription<List<ScanResult>>? _scanSubscription;
   StreamSubscription<BluetoothConnectionState>? _connectionSubscription;
@@ -90,6 +95,7 @@ class BleProvider extends ChangeNotifier {
           _isConnected = false;
           _connectedDevice = null;
           _writeCharacteristic = null;
+          _messageBuffer.clear();
           _statusMessage = 'Deconectat';
           notifyListeners();
         }
@@ -183,14 +189,51 @@ class BleProvider extends ChangeNotifier {
 
   void _handleReceivedData(List<int> value) {
     try {
-      String message = String.fromCharCodes(value);
-      _receivedMessages.add(message);
-      _statusMessage = 'Primit: $message';
+      final chunk = String.fromCharCodes(value);
+      _messageBuffer.write(chunk);
+      _statusMessage = 'Primit: $chunk';
+
+      // Procesează linii complete (terminate cu \n)
+      final raw = _messageBuffer.toString();
+      if (raw.contains('\n')) {
+        final lines = raw.split('\n');
+        for (int i = 0; i < lines.length - 1; i++) {
+          final line = lines[i].trim();
+          if (line.isNotEmpty) _processMessage(line);
+        }
+        _messageBuffer.clear();
+        if (lines.last.isNotEmpty) _messageBuffer.write(lines.last);
+      }
+
       notifyListeners();
     } catch (e) {
       _statusMessage = 'Eroare: $e';
       notifyListeners();
     }
+  }
+
+  void _processMessage(String message) {
+    _receivedMessages.add(message);
+    final lower = message.toLowerCase();
+
+    // "neluata" trebuie verificat înainte de "luata" (substring match)
+    if (lower.contains('neluata') || lower.contains('neluat')) {
+      final time = _extractTime(message);
+      onPillEvent?.call(
+        time != null ? 'Pastilă nu a fost luată la $time' : 'Pastilă nu a fost luată',
+      );
+    } else if (lower.contains('luata') || lower.contains('luat')) {
+      final time = _extractTime(message);
+      onPillEvent?.call(
+        time != null ? 'Pastilă a fost luată la $time' : 'Pastilă a fost luată',
+      );
+    }
+    // "OK", "TEST OK" și alte răspunsuri sunt ignorate
+  }
+
+  String? _extractTime(String message) {
+    final match = RegExp(r'\d{2}:\d{2}').firstMatch(message);
+    return match?.group(0);
   }
 
   @override

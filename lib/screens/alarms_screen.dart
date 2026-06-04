@@ -64,8 +64,10 @@ class _AlarmsScreenState extends State<AlarmsScreen> {
         if (_selectedAlarms[day]![moment]!) {
           final time = _formatTime(_selectedTimes[day]![moment]!);
           await alarmProvider.addAlarm(day, moment, time);
-          await bleProvider.sendCommand('$day $moment $time');
+          await bleProvider.sendCommand('$day $moment $time\r\n');
           alarmCount++;
+          // PIC ring buffer 64 bytes — delay pentru a nu supraîncărca
+          await Future.delayed(const Duration(milliseconds: 300));
         }
       }
     }

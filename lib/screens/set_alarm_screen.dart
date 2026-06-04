@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/ble_provider.dart';
-import '../providers/history_provider.dart';
 import '../providers/alarm_provider.dart';
 import 'ble_connection_screen.dart';
 
@@ -289,17 +288,12 @@ class _SetAlarmScreenState extends State<SetAlarmScreen> {
     final moment = AlarmProvider.moments[_selectedMomentIndex];
     final command = '$day $moment $hour:$minute\r\n';
 
-    // Cache providers before async gap
-    final historyProvider = Provider.of<HistoryProvider>(context, listen: false);
-
     // Trimite comanda prin BLE
     final success = await bleProvider.sendCommand(command);
 
     if (!mounted) return;
 
     if (success) {
-      await historyProvider.addEntry('Alarmă trimisă: $command');
-
       // Afișează confirmare
       setState(() {
         _confirmationMessage = '✓ Alarmă trimisă!\n$command';

@@ -81,18 +81,16 @@ class HistoryProvider extends ChangeNotifier {
     try {
       if (_database == null) return;
 
-      final entry = HistoryEntry(
-        message: message,
-        timestamp: DateTime.now(),
-      );
+      final now = DateTime.now();
+      final entry = HistoryEntry(message: message, timestamp: now);
 
-      await _database!.insert(
+      final id = await _database!.insert(
         'history',
         entry.toMap(),
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
 
-      _history.insert(0, entry);
+      _history.insert(0, HistoryEntry(id: id, message: message, timestamp: now));
       notifyListeners();
     } catch (e) {
       debugPrint('Eroare adăugare intrare: $e');
@@ -113,7 +111,8 @@ class HistoryProvider extends ChangeNotifier {
   }
 
   /// Șterge o intrare specifică
-  Future<void> deleteEntry(int id) async {
+  Future<void> deleteEntry(int? id) async {
+    if (id == null) return;
     try {
       if (_database == null) return;
 

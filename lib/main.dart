@@ -33,9 +33,33 @@ class PillDispenserApp extends StatelessWidget {
             brightness: Brightness.light,
           ),
         ),
-        home: const HomeScreen(),
+        home: const _AppBridge(child: HomeScreen()),
         debugShowCheckedModeBanner: false,
       ),
     );
   }
+}
+
+/// Conectează BleProvider cu HistoryProvider pentru a loga evenimentele de pastile.
+class _AppBridge extends StatefulWidget {
+  final Widget child;
+  const _AppBridge({required this.child});
+
+  @override
+  State<_AppBridge> createState() => _AppBridgeState();
+}
+
+class _AppBridgeState extends State<_AppBridge> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ble = context.read<BleProvider>();
+      final history = context.read<HistoryProvider>();
+      ble.onPillEvent = (message) => history.addEntry(message);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }

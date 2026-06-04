@@ -12,6 +12,7 @@ class BleConnectionScreen extends StatefulWidget {
 
 class _BleConnectionScreenState extends State<BleConnectionScreen> {
   static const String _hm10Name = 'HMSoft';
+  bool _popped = false;
 
   @override
   void initState() {
@@ -27,6 +28,7 @@ class _BleConnectionScreenState extends State<BleConnectionScreen> {
 
   @override
   void dispose() {
+    _popped = true;
     Provider.of<BleProvider>(context, listen: false).stopScan();
     super.dispose();
   }
@@ -274,7 +276,10 @@ class _BleConnectionScreenState extends State<BleConnectionScreen> {
         ),
       );
       Future.delayed(const Duration(seconds: 1), () {
-        if (mounted) Navigator.pop(context);
+        if (mounted && !_popped) {
+          _popped = true;
+          Navigator.pop(context);
+        }
       });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
