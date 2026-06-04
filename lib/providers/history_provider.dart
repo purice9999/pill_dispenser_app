@@ -81,7 +81,15 @@ class HistoryProvider extends ChangeNotifier {
     try {
       if (_database == null) return;
 
+      // Deduplicare: ignora daca acelasi mesaj a fost adaugat in ultimele 60s
+      // (previne dubluri cand evenimentul vine live SI prin SYNC)
       final now = DateTime.now();
+      final isDuplicate = _history.any((e) =>
+          e.message == message &&
+          now.difference(e.timestamp).inSeconds.abs() < 60,
+      );
+      if (isDuplicate) return;
+
       final entry = HistoryEntry(message: message, timestamp: now);
 
       final id = await _database!.insert(

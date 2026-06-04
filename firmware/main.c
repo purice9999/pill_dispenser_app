@@ -233,9 +233,9 @@ static void LED_Apply(signed char activeIdx, unsigned char blinkOn) {
 
 // ============================================================
 //  UART — HM-10 BLE (RC6=TX, RC7=RX, 9600 baud @ 8MHz)
-//  Receptie prin intrerupere cu buffer circular (64 bytes)
+//  Receptie prin intrerupere cu buffer circular (32 bytes)
 // ============================================================
-#define CIRC_SIZE 64
+#define CIRC_SIZE 32
 static volatile char          circBuf[CIRC_SIZE];
 static volatile unsigned char circHead = 0;
 static volatile unsigned char circTail = 0;
@@ -287,6 +287,71 @@ static unsigned char UART_ReadLine(void) {
         if (rxIdx < RX_BUF_SIZE - 1) rxBuf[rxIdx++] = c;
     }
     return 0;
+}
+
+// ============================================================
+//  EEPROM — stocare evenimente offline (buton/timeout)
+//  Layout: addr 0x00 = numar evenimente (0-84)
+//          addr 0x01+: evenimente 3 bytes (tip, ora, minut)
+//          tip: 0=luata, 1=neluata
+// ============================================================
+#define EEP_MAX 84
+
+static void EEPROM_Write(unsigned char addr, unsigned char data) {
+    EEADR            = addr;
+    EEDAT            = data;
+    EECON1bits.EEPGD = 0;
+    EECON1bits.WREN  = 1;
+    INTCONbits.GIE   = 0;
+    EECON2           = 0x55;
+    EECON2           = 0xAA;
+    EECON1bits.WR    = 1;
+    while (EECON1bits.WR);
+    EECON1bits.WREN  = 0;
+    INTCONbits.GIE   = 1;
+}
+
+static unsigned char EEPROM_Read(unsigned char addr) {
+    EEADR            = addr;
+    EECON1bits.EEPGD = 0;
+    EECON1bits.RD    = 1;
+    return EEDAT;
+}
+
+static void EEPROM_SaveEvent(unsigned char taken, unsigned char ev_h, unsigned char ev_m) {
+    unsigned char cnt  = EEPROM_Read(0x00);
+    if (cnt == 0xFF) cnt = 0;
+    if (cnt >= EEP_MAX) return;
+    unsigned char base = (unsigned char)(1 + cnt * 3);
+    EEPROM_Write(base,     taken);
+    EEPROM_Write(base + 1, ev_h);
+    EEPROM_Write(base + 2, ev_m);
+    EEPROM_Write(0x00, cnt + 1);
+}
+
+static void EEPROM_SendAll(void) {
+    unsigned char cnt = EEPROM_Read(0x00);
+    if (cnt == 0xFF || cnt == 0) { EEPROM_Write(0x00, 0); return; }
+    unsigned char i, type, ev_h, ev_m, base;
+    char d2[3];
+    d2[2] = '\0';
+    for (i = 0; i < cnt; i++) {
+        base  = (unsigned char)(1 + i * 3);
+        type  = EEPROM_Read(base);
+        ev_h  = EEPROM_Read(base + 1);
+        ev_m  = EEPROM_Read(base + 2);
+        UART_SendStr(type == 0 ? "SYNC luata " : "SYNC neluata ");
+        d2[0] = (char)('0' + ev_h / 10);
+        d2[1] = (char)('0' + ev_h % 10);
+        UART_SendStr(d2);
+        UART_SendStr(":");
+        d2[0] = (char)('0' + ev_m / 10);
+        d2[1] = (char)('0' + ev_m % 10);
+        UART_SendStr(d2);
+        UART_SendStr("\r\n");
+        __delay_ms(100);
+    }
+    EEPROM_Write(0x00, 0);
 }
 
 // ============================================================
@@ -427,6 +492,9 @@ void main(void) {
     I2C_Init();
     UART_Init();
 
+    // Initializeaza EEPROM daca e prima pornire (0xFF = sters din fabrica)
+    if (EEPROM_Read(0x00) == 0xFF) EEPROM_Write(0x00, 0);
+
     TRISA  &= ~MASK_A;
     TRISA0  = 1;
     TRISE  &= ~MASK_E;
@@ -475,6 +543,8 @@ void main(void) {
                 lcdState  = LCD_ACTIVE;
                 LCD_ShowAlarmActive(0);
                 UART_SendStr("TEST OK\r\n");
+            } else if (strcmp(rxBuf, "SYNC") == 0) {
+                EEPROM_SendAll();
             } else {
                 unsigned char idx = ParseCommand(rxBuf);
                 if (idx != 255) {
@@ -552,6 +622,7 @@ void main(void) {
                 lcdTimer = 3;
 
                 UART_SendStr("Pastila luata\r\n");
+                EEPROM_SaveEvent(0, h, m);  // 0 = luata
 
                 activeIdx    = -1;
                 blinkOn      = 0;
@@ -578,6 +649,7 @@ void main(void) {
                     lcdState   = LCD_NORMAL;
                     LED_Apply(-1, 0);
                     UART_SendStr("Pastila neluata\r\n");
+                    EEPROM_SaveEvent(1, h, m);  // 1 = neluata
                 }
             }
         } else {

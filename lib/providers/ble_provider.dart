@@ -102,6 +102,13 @@ class BleProvider extends ChangeNotifier {
       });
 
       await _discoverServices(device);
+
+      // Cere sync evenimente offline stocate in EEPROM
+      if (_writeCharacteristic != null) {
+        await Future.delayed(const Duration(milliseconds: 600));
+        await sendCommand('SYNC\r\n');
+      }
+
       notifyListeners();
       return true;
     } catch (e) {
