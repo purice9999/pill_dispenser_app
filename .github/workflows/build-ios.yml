@@ -22,6 +22,17 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Create GoogleService-Info.plist (Firebase)
+        env:
+          PLIST_B64: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST_B64 }}
+        run: |
+          if [ -n "$PLIST_B64" ]; then
+            echo "$PLIST_B64" | base64 --decode > ios/Runner/GoogleService-Info.plist
+            echo "Firebase: GoogleService-Info.plist creat cu succes"
+          else
+            echo "Firebase: secret GOOGLE_SERVICE_INFO_PLIST_B64 negasit, se construieste fara Firebase"
+          fi
+
       - name: Build iOS (fara codesign)
         run: flutter build ios --release --no-codesign
 

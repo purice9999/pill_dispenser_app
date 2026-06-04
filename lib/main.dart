@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'providers/ble_provider.dart';
 import 'providers/history_provider.dart';
 import 'providers/alarm_provider.dart';
@@ -7,18 +8,30 @@ import 'screens/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const PillDispenserApp());
+
+  bool firebaseOk = false;
+  try {
+    await Firebase.initializeApp();
+    firebaseOk = true;
+  } catch (e) {
+    debugPrint('Firebase nu a putut fi initializat: $e');
+  }
+
+  runApp(PillDispenserApp(firebaseEnabled: firebaseOk));
 }
 
 class PillDispenserApp extends StatelessWidget {
-  const PillDispenserApp({super.key});
+  final bool firebaseEnabled;
+  const PillDispenserApp({super.key, required this.firebaseEnabled});
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => BleProvider()),
-        ChangeNotifierProvider(create: (_) => HistoryProvider()),
+        ChangeNotifierProvider(
+          create: (_) => HistoryProvider(cloudEnabled: firebaseEnabled),
+        ),
         ChangeNotifierProvider(
           create: (_) => AlarmProvider()..initDatabase(),
         ),
