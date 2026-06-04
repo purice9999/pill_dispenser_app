@@ -288,12 +288,18 @@ class _SetAlarmScreenState extends State<SetAlarmScreen> {
     final moment = AlarmProvider.moments[_selectedMomentIndex];
     final command = '$day $moment $hour:$minute\r\n';
 
+    final alarmProvider = context.read<AlarmProvider>();
+
     // Trimite comanda prin BLE
     final success = await bleProvider.sendCommand(command);
 
     if (!mounted) return;
 
     if (success) {
+      // Salvează în baza de date locală
+      await alarmProvider.addAlarm(day, moment, '$hour:$minute');
+
+      if (!mounted) return;
       // Afișează confirmare
       setState(() {
         _confirmationMessage = '✓ Alarmă trimisă!\n$command';
