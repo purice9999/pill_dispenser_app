@@ -227,12 +227,12 @@ class BleProvider extends ChangeNotifier {
     if (lower.contains('neluata') || lower.contains('neluat')) {
       final time = _extractTime(message);
       onPillEvent?.call(
-        time != null ? 'Pastilă nu a fost luată la $time' : 'Pastilă nu a fost luată',
+        time != null ? 'Pastila nu a fost luată la $time' : 'Pastila nu a fost luată',
       );
     } else if (lower.contains('luata') || lower.contains('luat')) {
       final time = _extractTime(message);
       onPillEvent?.call(
-        time != null ? 'Pastilă a fost luată la $time' : 'Pastilă a fost luată',
+        time != null ? 'Pastila a fost luată la $time' : 'Pastila a fost luată',
       );
     }
     // "OK", "TEST OK" și alte răspunsuri sunt ignorate
