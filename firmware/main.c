@@ -530,6 +530,7 @@ void main(void) {
     signed char   confirmedIdx = -1;
     // Timeout alarma: 1200 loop-uri * 50ms = 60 secunde
     unsigned int  alarmTimeout = 0;
+    unsigned char doBuzz       = 0;
 
     while (1) {
 
@@ -631,8 +632,9 @@ void main(void) {
                 __delay_ms(200);
             } else {
                 loopCnt++;
-                if (loopCnt >= 10) { loopCnt = 0; blinkOn = !blinkOn; }
-                BUZZER = blinkOn;
+                if (loopCnt >= 20) { loopCnt = 0; blinkOn = !blinkOn; }
+                // Triple-beep: loops 0,2,4 = beep(50ms)-off(50ms)-beep(50ms)-off(50ms)-beep(50ms)-tacere(750ms)
+                doBuzz = (loopCnt == 0 || loopCnt == 2 || loopCnt == 4);
                 if (loopCnt == 0) LCD_ShowAlarmActive((unsigned char)activeIdx);
                 LED_Apply(activeIdx, blinkOn);
 
@@ -658,6 +660,17 @@ void main(void) {
             LED_Apply(-1, 0);
         }
 
-        __delay_ms(50);
+        // Genereaza ton 2kHz cand buzzerul trebuie sa sune (mult mai tare decat DC on/off)
+        if (doBuzz) {
+            unsigned char bz;
+            for (bz = 0; bz < 100; bz++) {
+                BUZZER = 1; __delay_us(250);
+                BUZZER = 0; __delay_us(250);
+            }
+            doBuzz = 0;
+        } else {
+            BUZZER = 0;
+            __delay_ms(50);
+        }
     }
 }
