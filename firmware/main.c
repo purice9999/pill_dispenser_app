@@ -515,10 +515,6 @@ void main(void) {
     __delay_ms(500);
     UART_Init();
 
-    // Seteaza RTC: 23:52:00, Joi (5), 04/06/2026
-    // Dupa ce ora e corecta, aceasta linie poate fi stearsa
-    RTC_SetTime(23, 52, 0, 5, 4, 6, 26);
-
     // Initializeaza EEPROM daca e prima pornire (0xFF = sters din fabrica)
     if (EEPROM_Read(0x00) == 0xFF) EEPROM_Write(0x00, 0);
 
