@@ -516,6 +516,8 @@ void main(void) {
     I2C_Init();
     __delay_ms(500);
     UART_Init();
+    __delay_ms(500);              // asteapta HM-10 sa booteze
+    UART_SendStr("AT+START\r\n"); // forteaza HM-10 in advertising mode
 
     // Initializeaza EEPROM daca e prima pornire (0xFF = sters din fabrica)
     if (EEPROM_Read(0x00) == 0xFF) EEPROM_Write(0x00, 0);
