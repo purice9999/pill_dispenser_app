@@ -62,15 +62,30 @@ class _AppBridge extends StatefulWidget {
   State<_AppBridge> createState() => _AppBridgeState();
 }
 
-class _AppBridgeState extends State<_AppBridge> {
+class _AppBridgeState extends State<_AppBridge> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final ble = context.read<BleProvider>();
       final history = context.read<HistoryProvider>();
       ble.onPillEvent = (message) => history.addEntry(message);
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // Deconectare automată când aplicația este complet închisă
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.detached) {
+      context.read<BleProvider>().disconnectDevice();
+    }
   }
 
   @override
